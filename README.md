@@ -7,11 +7,25 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 [![3D Models](https://img.shields.io/badge/3D%20Models-Z%20Anatomy-orange)](https://www.z-anatomy.com/)
 
-**Anatomy Insight** is a Jetpack Compose-based Android app that allows users to explore **3D models of human anatomy** with detailed descriptions. The app offers **interactive** anatomical models, enabling users to visualize and learn about human body structures.
-
+🚀 **Anatomy Insight** is an Android app that lets users **explore 3D models of human anatomy** with real-time rendering using **Google Filament**.  
 
 ---
 
+<p align="center">
+  <img src="https://github.com/shaikhmohammadtalha/android-anatomy-insight/blob/main/metadata/images/phoneScreenshots/01.jpg" width="250">
+  <img src="https://github.com/shaikhmohammadtalha/android-anatomy-insight/blob/main/metadata/images/phoneScreenshots/02.jpg" width="250">
+  <img src="https://github.com/shaikhmohammadtalha/android-anatomy-insight/blob/main/metadata/images/phoneScreenshots/03.jpg" width="250">
+</p>
+
+---
+
+## 📖 About  
+
+**Anatomy Insight** is a Jetpack Compose-powered Android application designed for **interactive anatomical exploration**.  
+It enables users to **visualize human body structures in 3D**, with **detailed descriptions** of each anatomical part.  
+Built using **Google Filament** for high-performance rendering, the app offers an immersive learning experience.  
+
+---
 ## 🚧 **Project Status: Under Development**  
 🔹 This project is actively being developed. Some features may not be fully implemented yet.  
 🔹 Expect **frequent updates**, **bug fixes**, and **new features** in future releases.  
@@ -27,14 +41,7 @@
 ✅ **Educational Descriptions** – Includes details for each anatomical part  
 ✅ **Optimized Performance** – Smooth rendering of 3D objects  
 
----
 
-## 🚀 **Screenshots**
-> 📌 *(Include some images of your app in action!)*  
-> Example:  
-> ![Screenshot](https://github.com/shaikhmohammadtalha/android-anatomy-insight/metadata/images/phoneScreenshots/01.png)
-> ![Screenshot](https://github.com/shaikhmohammadtalha/android-anatomy-insight/metadata/images/phoneScreenshots/02.png)
-> ![Screenshot](https://github.com/shaikhmohammadtalha/android-anatomy-insight/metadata/images/phoneScreenshots/03.png)
 ---
 
 ## 🛠️ **Technologies Used**
@@ -73,7 +80,7 @@ This project includes **modified and original 3D models** from **Z-Anatomy**, li
 - **Original Models:** Adapted from **BodyParts3D**  
 - **Modifications:** Some models have been resized, colored, repaired, or combined.  
 
-© 2025 **Shaikh Mohammad Talha**. This project follows the terms of the **CC BY-SA 4.0** license where applicable.
+© 2025 [**Shaikh Mohammad Talha**](https://github.com/shaikhmohammadtalha). This project follows the terms of the **CC BY-SA 4.0** license where applicable.
 
 ---
 
@@ -90,8 +97,9 @@ This project is licensed under the **Apache License 2.0**. See the [LICENSE](LIC
 ---
 
 ## 📬 **Contact**
-📧 **Email:** shaikhmot@gamil.com  
-🌐 **GitHub:** [@shaikhmohammadtalha](https://github.com/shaikhmohammadtalha)
+📧 **Email:** shaikhmot@gmail.com  
+🌐 **GitHub:** [**Shaikh Mohammad Talha**](https://github.com/shaikhmohammadtalha)
+
 
 ---
 
