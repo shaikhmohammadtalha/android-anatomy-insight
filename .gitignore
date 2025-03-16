@@ -1,0 +1,23 @@
+*.iml
+
+/local.properties
+
+.DS_Store
+
+/captures
+.externalNativeBuild
+.cxx
+
+# Ignore Gradle & build artifacts
+.gradle/
+build/
+
+# Ignore IDE settings
+.idea/
+.kotlinc/
+
+# Ignore local properties
+local.properties
+
+# Ignore Gradle wrapper logs
+gradle/wrapper/gradle-wrapper.jar
