@@ -52,6 +52,14 @@ Built using **Google Filament** for high-performance rendering, the app offers a
 
 ---
 
+## 📋 Requirements  
+🔹 **Minimum SDK:** Android 8.0 (API 27)  
+🔹 **Target SDK:** Android 16 (API 36) 
+🔹 **Architecture:** Universal  
+🔹 **Storage:** ~350MB free space recommended  
+
+---
+
 ## 🏗️ **Installation & Usage**
 1. **Clone the Repository**  
    ```sh
