@@ -128,7 +128,7 @@ class ModelRenderer {
         modelViewer.scene.skybox = null
         // Load the HDR environment using the utility function
         createEnvironment(assets, modelViewer.engine, "environments/lightroom_14b.hdr", modelViewer.scene)
-
+        modelViewer.scene.skybox = null
         // Add additional lights using the utility function
         createLights(modelViewer.engine, modelViewer.scene)
 
@@ -136,7 +136,6 @@ class ModelRenderer {
         modelViewer.renderer.clearOptions = modelViewer.renderer.clearOptions.apply {
             clear = true
         }
-
 
         pendingModelPath?.let {
             println("Loading pending model: $it")

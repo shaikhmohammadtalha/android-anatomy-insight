@@ -20,19 +20,26 @@ import android.view.SurfaceView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.shaikhmohammadtalha.anatomyinsight.ui.theme.AnatomyInsightTheme
 import com.google.android.filament.utils.Utils
+import com.shaikhmohammadtalha.anatomyinsight.ui.theme.AnatomyInsightTheme
 
 class MainActivity : ComponentActivity() {
 
@@ -58,6 +65,7 @@ fun MainActivityContent() {
     var currentModel by remember { mutableStateOf<AnatomyModel?>(null) }
     var subParts by remember { mutableStateOf<List<AnatomyModel>?>(null) } // Null means show main models
     var showMainModels by remember { mutableStateOf(true) } // Controls list switching
+    var selectedSubpart by remember { mutableStateOf<AnatomyModel?>(null) } // Store selected subpart globally
 
     val lifecycleOwner = rememberUpdatedState(LocalLifecycleOwner.current)
     // 🔹 Create a ScrollState to control scrolling
@@ -74,8 +82,8 @@ fun MainActivityContent() {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(0.45f) // Adjust height proportionally
-                    .background(color = Color.Gray)
+                    .weight(0.60f) // Adjust height proportionally
+                    .background(MaterialTheme.colorScheme.secondary) // Now using AMOLED Black
             ) {
                 if (currentModel != null) {
                     println("Displaying model: ${currentModel?.name}") // Debug log
@@ -93,7 +101,8 @@ fun MainActivityContent() {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(0.55f)
+                    .weight(0.40f)
+                    .background(MaterialTheme.colorScheme.background) // Apply theme surface
             ) {
                 // 🔹 Reset scroll when switching between main models & subparts
                 LaunchedEffect(showMainModels) {
@@ -101,37 +110,32 @@ fun MainActivityContent() {
                 }
 
                 // Show either main models or subparts
-                ModelRows(
-                    models = if (showMainModels) models else subParts ?: emptyList(),
-                    onModelSelect = { model ->
-                        if (showMainModels) {
-                            // Selecting a main model
+                if (showMainModels) {
+                    ModelRows(
+                        models = models,
+                        onModelSelect = { model ->
                             currentModel = model
                             subParts = fetchSubParts(model.name)
                             showMainModels = false
                             renderer.loadModel(model.filePath)
-                        } else {
-                            // Selecting a subpart (does not change list)
-                            renderer.loadModel(model.filePath)
-                        }
-                    },
-                    currentModel = currentModel,
-                    listState = listState // Pass scroll state
-                )
-
-                // 🔹 Fix button disappearing issue
-                if (subParts != null) {
-                    Button(
-                        onClick = {
-                            showMainModels = !showMainModels
-                            subParts = if (showMainModels) null else subParts // Reset if going back
                         },
-                        modifier = Modifier
-                            .padding(16.dp)
-                            .align(Alignment.BottomCenter) // Ensure it's visible
-                    ) {
-                        Text(if (showMainModels) "View Subparts" else "Back to Models")
-                    }
+                        currentModel = currentModel,
+                        listState = listState,
+                        showMainModels = showMainModels,
+                        toggleMainModels = { showMainModels = !showMainModels }
+                    )
+                } else {
+                    SubpartRows(
+                        subparts = fetchSubParts(currentModel?.name ?: ""),
+                        onSubpartSelect = { subpart -> // Renamed to `subpart` to avoid conflict
+                            selectedSubpart = subpart
+                            renderer.loadModel(subpart.filePath)
+                        },
+                        currentModel = currentModel,
+                        selectedSubpart = selectedSubpart,
+                        showMainModels = showMainModels,
+                        toggleMainModels = { showMainModels = !showMainModels }
+                    )
                 }
             }
         }
@@ -141,7 +145,7 @@ fun MainActivityContent() {
 @Composable
 @Preview(showBackground = true)
 fun MainActivityPreview() {
-    AnatomyInsightTheme {
+    AnatomyInsightTheme(darkTheme = true) {
         MainActivityContent()
     }
 }

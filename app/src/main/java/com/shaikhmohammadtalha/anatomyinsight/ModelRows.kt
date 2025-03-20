@@ -17,133 +17,196 @@ package com.shaikhmohammadtalha.anatomyinsight
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.shaikhmohammadtalha.anatomyinsight.ui.theme.AnatomyInsightTheme
-import com.shaikhmohammadtalha.anatomyinsight.ui.theme.ExpandableCardText
-import com.shaikhmohammadtalha.anatomyinsight.ui.theme.ModelCardBackground
 
 @Composable
 fun ModelRows(
     models: List<AnatomyModel>,
-    onModelSelect: (AnatomyModel) -> Unit, // Callback for model selection
+    onModelSelect: (AnatomyModel) -> Unit,
     currentModel: AnatomyModel?,
-    listState: LazyListState = rememberLazyListState()
+    listState: LazyListState = rememberLazyListState(),
+    showMainModels: Boolean,
+    toggleMainModels: () -> Unit
 ) {
-    LazyColumn(
-        state = listState, // Apply scroll state here
-        modifier = Modifier.fillMaxSize(),
+
+    var showDescription by remember { mutableStateOf(false) } // Toggles description visibility
+
+    Box(
+        modifier = Modifier.fillMaxSize()
     ) {
-        // Show expandable card if a model is selected
-        currentModel?.let {
-            item {
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                ) {
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            if (showDescription && currentModel != null) {
+                // 🔹 Show only the Expandable Card (description)
+                item {
                     ExpandableCard(
-                        title = it.name,
-                        description = "${it.name} leverages Kotlin Filament technology to create highly detailed and interactive visualizations of human anatomy. This innovative approach enhances educational experiences and promotes a deeper understanding of the human body’s complex functions and interconnections."
+                        title = currentModel.name,
+                        description = "${currentModel.name} leverages Kotlin Filament technology to create highly detailed and interactive visualizations of human anatomy. This innovative approach enhances educational experiences and promotes a deeper understanding of the human body’s complex functions and interconnections."
                     )
                 }
-            }
-        }
+            } else {
+                // 🔹 Show the Model List
 
-        // Show the list of models
-        // Show the list of models
-        items(models.chunked(2)) { pair ->
-            Surface( // Wrap the entire row in a Surface to apply background color
-                color = Color(0xFF757575), // Dark Gray (adjust as needed)
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp), // Add some spacing
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    pair.forEach { model ->
-                        Surface(
-                            onClick = { onModelSelect(model) }, // Load the selected model
 
+                items(models.chunked(3)) { chunk ->
+                    Surface(
+                        color = MaterialTheme.colorScheme.background,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
                             modifier = Modifier
-                                .weight(1f)
-                                .padding(horizontal = 8.dp, vertical = 12.dp),
-                            shape = MaterialTheme.shapes.large,
-                            color = ModelCardBackground // Keep inner card theme
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceEvenly
                         ) {
-                            Column(
-                                verticalArrangement = Arrangement.spacedBy(16.dp),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp, vertical = 16.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                val imagePath = "file:///android_asset/image/${
-                                    model.name.replace(" ", "").lowercase()
-                                }.png"
-
-                                Image(
-                                    painter = rememberAsyncImagePainter(imagePath),
-                                    contentDescription = model.name,
+                            chunk.forEach { model ->
+                                Surface(
+                                    onClick = { onModelSelect(model) },
                                     modifier = Modifier
-                                        .size(140.dp)
-                                        .clip(MaterialTheme.shapes.medium)
-                                )
-
-                                Column(
-                                    modifier = Modifier.padding(horizontal = 8.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
+                                        .weight(1f)
+                                        .padding(horizontal = 8.dp),
+                                    shadowElevation = 8.dp,
+                                    shape = MaterialTheme.shapes.large,
+                                    color = MaterialTheme.colorScheme.surface,
                                 ) {
-                                    Text(
-                                        text = model.name,
-                                        color = ExpandableCardText, // Keep inner card theme
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        maxLines = 1,
-                                        textAlign = TextAlign.Center
-                                    )
-                                    Text(
-                                        text = "Tap to view",
-                                        color = ExpandableCardText, // Keep inner card theme
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        maxLines = 1,
-                                        textAlign = TextAlign.Center
-                                    )
+                                    ModelListItem(model)
                                 }
+                            }
+                            if (chunk.size < 2) {
+                                Spacer(modifier = Modifier.weight(1f))
                             }
                         }
                     }
-                    if (pair.size < 2) {
-                        Spacer(modifier = Modifier.weight(1f))
-                    }
                 }
             }
         }
+        if (currentModel != null) {
+            Button(
+                onClick = { toggleMainModels() },
+                modifier = Modifier
+                    .padding(16.dp)
+                    .align(Alignment.BottomCenter),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary) // Rich Red button
+            ) {
+                Text(
+                    if (showMainModels) "View Subparts" else "Back to Models",
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+            }
+        }
 
+        // 🔹 Floating Button - Toggles between Description & Model List
+        val screenHeight = LocalConfiguration.current.screenHeightDp.dp
+        val modelRowsHeight = screenHeight * 0.40f
+        val buttonSize = modelRowsHeight * 0.3f
+        if (currentModel != null) {
+            FloatingActionButton(
+                onClick = { showDescription = !showDescription }, // Toggle Description
+                shape = CircleShape,
+                containerColor = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .size(buttonSize)
+                    .align(Alignment.CenterEnd)
+                    .padding(end = 16.dp)
+            ) {
+                Text(
+                    text = if (showDescription) "M" else "D", // Show "M" when in description mode, "D" when in model list
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    style = MaterialTheme.typography.headlineMedium,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
     }
 }
+
+@Composable
+fun ModelListItem(model: AnatomyModel) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        val imagePath = "file:///android_asset/image/${
+            model.name.replace(" ", "").lowercase()
+        }.png"
+
+        // 🔹 Box ensures consistent space
+        Box(
+            modifier = Modifier
+                .size(140.dp) // Fixed size for consistency
+                .clip(MaterialTheme.shapes.medium)
+        ) {
+            Image(
+                painter = rememberAsyncImagePainter(imagePath),
+                contentDescription = model.name,
+                contentScale = ContentScale.Fit, // Ensures consistent size
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Column(
+            modifier = Modifier.padding(horizontal = 4.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = model.name,
+                color = MaterialTheme.colorScheme.onPrimary,
+                style = MaterialTheme.typography.bodyLarge,
+                maxLines = 1,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = "Tap to view",
+                color = MaterialTheme.colorScheme.outline,
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 1,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 fun ModelRowsPreview() {
@@ -153,12 +216,16 @@ fun ModelRowsPreview() {
         AnatomyModel("Myology", "models/Myology.glb")
     )
 
-    AnatomyInsightTheme {
+    var showMainModels by remember { mutableStateOf(true) } // Toggle state
+
+    AnatomyInsightTheme(darkTheme = true) {
         ModelRows(
             models = sampleModels,
             onModelSelect = {}, // No-op for preview
-            currentModel = sampleModels.first() // Show first model as selected
-            // Simulated screen height
+            currentModel = sampleModels.first(), // Show first model as selected
+            showMainModels = showMainModels,
+            toggleMainModels = { showMainModels = !showMainModels }
         )
     }
 }
+

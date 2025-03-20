@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -59,6 +60,7 @@ fun ExpandableCard(
             .animateContentSize()
             .clip(MaterialTheme.shapes.medium),
         shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), // Soft White background
         onClick = {
             expandedState = !expandedState
         }
@@ -75,6 +77,7 @@ fun ExpandableCard(
                     modifier = Modifier
                         .weight(6f),
                     text = title,
+                    color = MaterialTheme.colorScheme.onSurface, // Dark Gray text
                     fontSize = MaterialTheme.typography.headlineMedium.fontSize,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
@@ -89,13 +92,15 @@ fun ExpandableCard(
                     }) {
                     Icon(
                         imageVector = Icons.Default.ArrowDropDown,
-                        contentDescription = "Drop-Down Arrow"
+                        contentDescription = "Drop-Down Arrow",
+                        tint = MaterialTheme.colorScheme.primary // Rich Red icon
                     )
                 }
             }
             if (expandedState) {
                 Text(
                     text = description,
+                    color = MaterialTheme.colorScheme.onSurface, // Dark Gray text
                     fontSize = MaterialTheme.typography.bodyMedium.fontSize,
                     fontWeight = FontWeight.Normal,
                     overflow = TextOverflow.Visible // Overflow visible when expanded
@@ -104,6 +109,7 @@ fun ExpandableCard(
                 // Truncated description when collapsed
                 Text(
                     text = description,
+                    color = MaterialTheme.colorScheme.onSurface, // Dark Gray text
                     fontSize = MaterialTheme.typography.bodyMedium.fontSize,
                     fontWeight = FontWeight.Normal,
                     maxLines = 2, // Show a maximum of 2 lines in collapsed mode
@@ -116,7 +122,7 @@ fun ExpandableCard(
 @Preview(showBackground = true)
 @Composable
 fun ExpandableCardPreview() {
-    AnatomyInsightTheme {
+    AnatomyInsightTheme(darkTheme = true) {
         ExpandableCard(
             title = "Card Title",
             description = "This is a long description that will show up when the card is expanded. It contains more text that will be visible only when the user clicks to expand the card. This is just a preview for the expandable card functionality."

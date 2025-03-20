@@ -12,9 +12,13 @@
 ---
 
 <p align="center">
-  <img src="https://github.com/shaikhmohammadtalha/android-anatomy-insight/blob/main/metadata/images/phoneScreenshots/01.jpg" width="250">
-  <img src="https://github.com/shaikhmohammadtalha/android-anatomy-insight/blob/main/metadata/images/phoneScreenshots/02.jpg" width="250">
-  <img src="https://github.com/shaikhmohammadtalha/android-anatomy-insight/blob/main/metadata/images/phoneScreenshots/03.jpg" width="250">
+
+<img src="https://github.com/shaikhmohammadtalha/android-anatomy-insight/blob/main/metadata/images/phoneScreenshots/01.jpg" width="250">
+
+<img src="https://github.com/shaikhmohammadtalha/android-anatomy-insight/blob/main/metadata/images/phoneScreenshots/02.jpg" width="250">
+
+<img src="https://github.com/shaikhmohammadtalha/android-anatomy-insight/blob/main/metadata/images/phoneScreenshots/03.jpg" width="250">
+  
 </p>
 
 ---

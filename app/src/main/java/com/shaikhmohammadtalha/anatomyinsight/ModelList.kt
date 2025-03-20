@@ -15,6 +15,7 @@
  */
 package com.shaikhmohammadtalha.anatomyinsight
 
+
 data class AnatomyModel(
     val name: String,
     val filePath: String,
