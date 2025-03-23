@@ -17,9 +17,12 @@ package com.shaikhmohammadtalha.anatomyinsight
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -38,8 +41,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.shaikhmohammadtalha.anatomyinsight.ui.theme.AnatomyInsightTheme
@@ -49,7 +56,7 @@ fun ExpandableCard(
     title: String,
     description: String
 ) {
-    var expandedState by remember { mutableStateOf(false) }
+    var expandedState by remember { mutableStateOf(true) }
     val rotationState by animateFloatAsState(
         targetValue = if (expandedState) 180f else 0f, label = ""
     )
@@ -60,72 +67,135 @@ fun ExpandableCard(
             .animateContentSize()
             .clip(MaterialTheme.shapes.medium),
         shape = MaterialTheme.shapes.medium,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), // Soft White background
-        onClick = {
-            expandedState = !expandedState
-        }
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        onClick = { expandedState = !expandedState }
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(12.dp)
         ) {
+            // 🔹 Title + Expand Button
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    modifier = Modifier
-                        .weight(6f),
+                    modifier = Modifier.weight(6f),
                     text = title,
-                    color = MaterialTheme.colorScheme.onSurface, // Dark Gray text
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = MaterialTheme.typography.headlineMedium.fontSize,
                     fontWeight = FontWeight.Bold,
-                    maxLines = 1,
+                    lineHeight = MaterialTheme.typography.headlineMedium.fontSize * 1.2f, // ✅ Fix added here
+                    maxLines = if (expandedState) Int.MAX_VALUE else 1,
                     overflow = TextOverflow.Ellipsis
                 )
+
                 IconButton(
                     modifier = Modifier
                         .weight(1f)
                         .rotate(rotationState),
-                    onClick = {
-                        expandedState = !expandedState
-                    }) {
+                    onClick = { expandedState = !expandedState }
+                ) {
                     Icon(
                         imageVector = Icons.Default.ArrowDropDown,
                         contentDescription = "Drop-Down Arrow",
-                        tint = MaterialTheme.colorScheme.primary // Rich Red icon
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 }
             }
-            if (expandedState) {
-                Text(
-                    text = description,
-                    color = MaterialTheme.colorScheme.onSurface, // Dark Gray text
-                    fontSize = MaterialTheme.typography.bodyMedium.fontSize,
-                    fontWeight = FontWeight.Normal,
-                    overflow = TextOverflow.Visible // Overflow visible when expanded
-                )
-            } else {
-                // Truncated description when collapsed
-                Text(
-                    text = description,
-                    color = MaterialTheme.colorScheme.onSurface, // Dark Gray text
-                    fontSize = MaterialTheme.typography.bodyMedium.fontSize,
-                    fontWeight = FontWeight.Normal,
-                    maxLines = 2, // Show a maximum of 2 lines in collapsed mode
-                    overflow = TextOverflow.Ellipsis
-                )
+            // ✅ Fix: Add spacing between Title and Description
+            Spacer(modifier = Modifier.height(8.dp))
+
+
+            // 🔹 Description Handling (Always Follows Proper Formatting)
+            Column(
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier.padding(top = 8.dp)
+            ) {
+                val lines = description.split("\n").filter { it.isNotBlank() }
+
+                // ✅ Parse the text to handle Bold (`**text**`) and Bullets (`-`)
+                val formattedText = buildAnnotatedString {
+                    lines.forEach { line ->
+                        if (line.startsWith("-")) {
+                            // Bullet Point Formatting
+                            append("• ")
+                            val textWithoutBullet = line.removePrefix("-").trim()
+                            appendStyledText(textWithoutBullet)
+                        } else {
+                            // Normal Paragraph or Bold Text Handling
+                            appendStyledText(line)
+                        }
+                        append("\n") // Add a line break after each item
+                    }
+                }
+
+                // ✅ Show formatted text (Collapses after 3 lines)
+                if (expandedState) {
+                    Text(
+                        text = formattedText,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                } else {
+                    Text(
+                        text = formattedText,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
         }
     }
 }
+
+// 🔹 Helper function to handle Bold (`**text**`) in Text
+fun AnnotatedString.Builder.appendStyledText(input: String) {
+    val regex = Regex("\\*\\*(.*?)\\*\\*") // Detects **bold text**
+    val matches = regex.findAll(input)
+
+    var lastIndex = 0
+    for (match in matches) {
+        val start = match.range.first
+        val end = match.range.last + 1
+
+        // Append normal text before bold part
+        append(input.substring(lastIndex, start))
+
+        // Apply bold style
+        withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+            append(match.groupValues[1]) // Extracts text inside **bold**
+        }
+
+        lastIndex = end
+    }
+
+    // Append any remaining normal text
+    if (lastIndex < input.length) {
+        append(input.substring(lastIndex))
+    }
+}
+
+
 @Preview(showBackground = true)
 @Composable
 fun ExpandableCardPreview() {
     AnatomyInsightTheme(darkTheme = true) {
         ExpandableCard(
-            title = "Card Title",
-            description = "This is a long description that will show up when the card is expanded. It contains more text that will be visible only when the user clicks to expand the card. This is just a preview for the expandable card functionality."
+            title = "Splanchnology (Study of Viscera/Organs)",
+            description ="- **Scientific Name:** Systema splanchnicum\n" +
+                    "\n" +
+                    "Splanchnology is the study of internal organs (viscera), including:\n" +
+                    "\n" +
+                    "- **Digestive system:** Stomach, intestines, liver, pancreas.\n" +
+                    "- **Respiratory system:** Lungs, trachea.\n" +
+                    "- **Urogenital system:** Kidneys, bladder, reproductive organs.\n" +
+                    "\n" +
+                    "These systems work together to support digestion, respiration, reproduction, and excretion.\n" +
+                    "\n" +
+                    "**Source:** Gray’s Anatomy (1918 Edition) - Public Domain\n"
         )
     }
 }

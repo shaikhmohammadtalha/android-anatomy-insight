@@ -92,6 +92,14 @@ This project includes **modified and original 3D models** from **Z-Anatomy**, li
 - **Original Models:** Adapted from **BodyParts3D**  
 - **Modifications:** Some models have been resized, colored, repaired, or combined.  
 
+### 📚 **Anatomical Descriptions**
+The educational descriptions for anatomical structures in this app are sourced from **open-access and public domain medical literature**.
+- **[OpenStax - Anatomy and Physiology](https://openstax.org/details/books/anatomy-and-physiology)** (Licensed under **CC BY 4.0**)
+- **[Gray’s Anatomy (1918 Edition)](https://www.bartleby.com/107/)** (Public Domain)
+- **[MedlinePlus (U.S. National Library of Medicine)](https://medlineplus.gov/)** (Government-funded, public domain content)
+
+When quoting or adapting descriptions from these sources, proper attribution is provided within the app.
+
 © 2025 [**Shaikh Mohammad Talha**](https://github.com/shaikhmohammadtalha). This project follows the terms of the **CC BY-SA 4.0** license where applicable.
 
 ---

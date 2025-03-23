@@ -38,8 +38,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -52,18 +54,30 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.shaikhmohammadtalha.anatomyinsight.ui.theme.AnatomyInsightTheme
+import com.shaikhmohammadtalha.data.AnatomyModelEntity
+import com.shaikhmohammadtalha.viewmodel.ModelViewModel
 
 @Composable
 fun ModelRows(
-    models: List<AnatomyModel>,
+    viewModel: ModelViewModel, // ✅ Use ViewModel instead of a hardcoded list
     onModelSelect: (AnatomyModel) -> Unit,
     currentModel: AnatomyModel?,
     listState: LazyListState = rememberLazyListState(),
     showMainModels: Boolean,
     toggleMainModels: () -> Unit
 ) {
+    val modelEntities by viewModel.allModels.collectAsState(initial = emptyList())
 
+    val models = modelEntities.map { entity ->
+        AnatomyModel(name = entity.name, filePath = entity.filePath)
+    }
     var showDescription by remember { mutableStateOf(false) } // Toggles description visibility
+
+    val modelDetails by produceState<AnatomyModelEntity?>(initialValue = null, currentModel) {
+        currentModel?.let { model ->
+            viewModel.getModelByName(model.name).collect { value = it }
+        }
+    }
 
     Box(
         modifier = Modifier.fillMaxSize()
@@ -73,14 +87,25 @@ fun ModelRows(
             modifier = Modifier.fillMaxSize()
         ) {
             if (showDescription && currentModel != null) {
-                // 🔹 Show only the Expandable Card (description)
                 item {
-                    ExpandableCard(
-                        title = currentModel.name,
-                        description = "${currentModel.name} leverages Kotlin Filament technology to create highly detailed and interactive visualizations of human anatomy. This innovative approach enhances educational experiences and promotes a deeper understanding of the human body’s complex functions and interconnections."
-                    )
+                    if (modelDetails != null) {
+                        // ✅ Show Model details when available
+                        ExpandableCard(
+                            title = modelDetails!!.scientificName, // ✅ Use scientific name instead of regular name
+                            description = modelDetails!!.description // ✅ Fetch description from DB
+                        )
+                    } else {
+                        // 🔹 Show Loading Message instead of crashing
+                        Text(
+                            text = "Loading model details...",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
                 }
-            } else {
+            }
+            else {
                 // 🔹 Show the Model List
 
 
@@ -210,22 +235,20 @@ fun ModelListItem(model: AnatomyModel) {
 @Preview(showBackground = true)
 @Composable
 fun ModelRowsPreview() {
-    val sampleModels = listOf(
-        AnatomyModel("Splanchnology", "models/Splanchnology.glb"),
-        AnatomyModel("Neurology", "models/Neurology.glb"),
-        AnatomyModel("Myology", "models/Myology.glb")
-    )
+    val fakeModelViewModel = object {
+    }
 
     var showMainModels by remember { mutableStateOf(true) } // Toggle state
 
     AnatomyInsightTheme(darkTheme = true) {
         ModelRows(
-            models = sampleModels,
+            viewModel = fakeModelViewModel as ModelViewModel, // ✅ Pass a fake ViewModel
             onModelSelect = {}, // No-op for preview
-            currentModel = sampleModels.first(), // Show first model as selected
+            currentModel = null, // No selected model in preview
             showMainModels = showMainModels,
             toggleMainModels = { showMainModels = !showMainModels }
         )
     }
 }
+
 

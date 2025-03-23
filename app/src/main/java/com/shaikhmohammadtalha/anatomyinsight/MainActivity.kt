@@ -19,6 +19,7 @@ import android.os.Bundle
 import android.view.SurfaceView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,6 +32,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
@@ -40,6 +42,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.google.android.filament.utils.Utils
 import com.shaikhmohammadtalha.anatomyinsight.ui.theme.AnatomyInsightTheme
+import com.shaikhmohammadtalha.viewmodel.ModelViewModel
 
 class MainActivity : ComponentActivity() {
 
@@ -49,27 +52,35 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private val modelViewModel: ModelViewModel by viewModels() // ✅ Added
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             AnatomyInsightTheme {
-                MainActivityContent()
+                MainActivityContent(modelViewModel)
             }
         }
     }
 }
 
 @Composable
-fun MainActivityContent() {
+fun MainActivityContent(modelViewModel: ModelViewModel) {
     val renderer = remember { ModelRenderer() }
     var currentModel by remember { mutableStateOf<AnatomyModel?>(null) }
-    var subParts by remember { mutableStateOf<List<AnatomyModel>?>(null) } // Null means show main models
     var showMainModels by remember { mutableStateOf(true) } // Controls list switching
     var selectedSubpart by remember { mutableStateOf<AnatomyModel?>(null) } // Store selected subpart globally
 
     val lifecycleOwner = rememberUpdatedState(LocalLifecycleOwner.current)
     // 🔹 Create a ScrollState to control scrolling
     val listState = rememberLazyListState()
+
+    // ✅ Fetch subparts dynamically when a model is selected
+    val subParts by produceState<List<AnatomyModel>>(initialValue = emptyList(), currentModel) {
+        currentModel?.let { model ->
+            modelViewModel.fetchSubParts(model.name).collect { value = it }
+        }
+    }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -112,29 +123,28 @@ fun MainActivityContent() {
                 // Show either main models or subparts
                 if (showMainModels) {
                     ModelRows(
-                        models = models,
+                        viewModel = modelViewModel,
                         onModelSelect = { model ->
                             currentModel = model
-                            subParts = fetchSubParts(model.name)
                             showMainModels = false
                             renderer.loadModel(model.filePath)
                         },
                         currentModel = currentModel,
-                        listState = listState,
                         showMainModels = showMainModels,
                         toggleMainModels = { showMainModels = !showMainModels }
                     )
                 } else {
                     SubpartRows(
-                        subparts = fetchSubParts(currentModel?.name ?: ""),
-                        onSubpartSelect = { subpart -> // Renamed to `subpart` to avoid conflict
+                        subparts = subParts,
+                        onSubpartSelect = { subpart ->
                             selectedSubpart = subpart
                             renderer.loadModel(subpart.filePath)
                         },
                         currentModel = currentModel,
                         selectedSubpart = selectedSubpart,
                         showMainModels = showMainModels,
-                        toggleMainModels = { showMainModels = !showMainModels }
+                        toggleMainModels = { showMainModels = !showMainModels },
+                        viewModel = modelViewModel // ✅ Pass ViewModel for subpart details
                     )
                 }
             }
@@ -145,7 +155,11 @@ fun MainActivityContent() {
 @Composable
 @Preview(showBackground = true)
 fun MainActivityPreview() {
+    val fakeModelViewModel = object {
+    }
+
     AnatomyInsightTheme(darkTheme = true) {
-        MainActivityContent()
+        MainActivityContent(modelViewModel = fakeModelViewModel as ModelViewModel)
     }
 }
+

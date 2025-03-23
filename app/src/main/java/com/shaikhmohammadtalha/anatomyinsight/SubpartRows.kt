@@ -15,6 +15,7 @@
  */
 package com.shaikhmohammadtalha.anatomyinsight
 
+import android.app.Application
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -29,6 +30,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -38,6 +40,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.shaikhmohammadtalha.anatomyinsight.ui.theme.AnatomyInsightTheme
+import com.shaikhmohammadtalha.data.SubpartEntity
+import com.shaikhmohammadtalha.viewmodel.ModelViewModel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 
 @Composable
 fun SubpartRows(
@@ -47,9 +53,23 @@ fun SubpartRows(
     selectedSubpart: AnatomyModel?, // 🔹 Receive the selected subpart from parent
     showMainModels: Boolean,
     toggleMainModels: () -> Unit,
-    listState: LazyListState = rememberLazyListState()
+    listState: LazyListState = rememberLazyListState(),
+    viewModel: ModelViewModel
 ) {
     var showDescription by remember { mutableStateOf(false) } // Toggles description visibility
+
+    val subpartDetails by produceState<SubpartEntity?>(initialValue = null, selectedSubpart) {
+        selectedSubpart?.let { subpart ->
+            viewModel.getSubpartByName(subpart.name).collect { value = it }
+        }
+    }
+
+    val modelDetails by produceState<SubpartEntity?>(initialValue = null, currentModel) {
+        currentModel?.let { model ->
+            viewModel.getSubpartByName(model.name).collect { value = it }
+        }
+    }
+
 
     Box(
         modifier = Modifier.fillMaxSize()
@@ -61,14 +81,32 @@ fun SubpartRows(
                 .background(color = MaterialTheme.colorScheme.background)
         ) {
             if (showDescription) {
-                // 🔹 Show Subpart Description
                 item {
-                    ExpandableCard(
-                        title = selectedSubpart?.name ?: (currentModel?.name ?: "Unknown"),
-                        description = "${selectedSubpart?.name ?: (currentModel?.name ?: "Unknown")} is a detailed anatomical subpart. It enhances understanding through high-quality 3D visualization."
-                    )
+                    if (selectedSubpart != null && subpartDetails != null) {
+                        // ✅ Show Subpart details
+                        ExpandableCard(
+                            title = subpartDetails!!.scientificName,
+                            description = subpartDetails!!.description
+                        )
+                    } else if (modelDetails != null) {
+                        // ✅ Show Main Model details as fallback
+                        ExpandableCard(
+                            title = modelDetails!!.scientificName,
+                            description = modelDetails!!.description
+                        )
+                    } else {
+                        // 🔹 Show Loading Message
+                        Text(
+                            text = "Loading details...",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
                 }
-            } else {
+            }
+
+            else {
                 // 🔹 Show Subpart List
                 items(subparts) { subpart ->
                     Surface(
@@ -153,7 +191,6 @@ fun SubpartRows(
     }
 }
 
-
 @Preview(showBackground = true)
 @Composable
 fun SubpartRowsPreview() {
@@ -164,22 +201,33 @@ fun SubpartRowsPreview() {
         AnatomyModel("Kidney", "models/kidney.glb")
     )
 
-    var currentModel by remember { mutableStateOf(sampleSubparts.first()) } // Default to first model
-    var selectedSubpart by remember { mutableStateOf<AnatomyModel?>(null) } // Track selected subpart
+    var selectedSubpart by remember { mutableStateOf<AnatomyModel?>(null) }
     var showMainModels by remember { mutableStateOf(false) }
 
     AnatomyInsightTheme(darkTheme = true) {
         Surface {
             SubpartRows(
                 subparts = sampleSubparts,
-                onSubpartSelect = { selectedSubpart = it; currentModel = it }, // Update both states
-                currentModel = currentModel,
-                selectedSubpart = selectedSubpart, // Pass selected subpart
+                onSubpartSelect = { selectedSubpart = it }, // ✅ Update only selected subpart
+                currentModel = null, // ✅ No need for currentModel in preview
+                selectedSubpart = selectedSubpart,
                 showMainModels = showMainModels,
-                toggleMainModels = { showMainModels = !showMainModels }
+                toggleMainModels = { showMainModels = !showMainModels },
+                viewModel = FakeModelViewModel() // ✅ Pass a fake ViewModel for preview
             )
         }
     }
 }
 
-
+// ✅ Create a fake ViewModel for preview
+class FakeModelViewModel : ModelViewModel(Application()) {
+    override fun getSubpartByName(subpartName: String): Flow<SubpartEntity?> {
+        return flowOf(
+            SubpartEntity(
+                id = 1, modelId = 1, name = subpartName,
+                scientificName = "Scientific $subpartName",
+                description = "This is a detailed description of $subpartName."
+            )
+        )
+    }
+}
