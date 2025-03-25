@@ -35,7 +35,9 @@ interface SubpartDao {
 
     @Query("SELECT * FROM subparts WHERE name = :subpartName LIMIT 1")
     fun getSubpartByName(subpartName: String): Flow<SubpartEntity?>
+
 }
+
 
 data class SubpartResult(
     val name: String,

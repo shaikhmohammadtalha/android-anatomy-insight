@@ -23,7 +23,8 @@ import kotlinx.coroutines.flow.Flow
 interface ModelDao {
     @Query("SELECT * FROM models ORDER BY id ASC")
     fun getAllModels(): Flow<List<AnatomyModelEntity>>
+
     @Query("SELECT * FROM models WHERE name = :modelName LIMIT 1")
     fun getModelByName(modelName: String): Flow<AnatomyModelEntity>
-
 }
+

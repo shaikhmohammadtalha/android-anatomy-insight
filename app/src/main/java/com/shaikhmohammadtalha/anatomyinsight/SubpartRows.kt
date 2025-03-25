@@ -50,13 +50,13 @@ fun SubpartRows(
     subparts: List<AnatomyModel>,
     onSubpartSelect: (AnatomyModel) -> Unit,
     currentModel: AnatomyModel?,
-    selectedSubpart: AnatomyModel?, // 🔹 Receive the selected subpart from parent
+    selectedSubpart: AnatomyModel?,
     showMainModels: Boolean,
     toggleMainModels: () -> Unit,
     listState: LazyListState = rememberLazyListState(),
     viewModel: ModelViewModel
 ) {
-    var showDescription by remember { mutableStateOf(false) } // Toggles description visibility
+    var showDescription by remember { mutableStateOf(false) }
 
     val subpartDetails by produceState<SubpartEntity?>(initialValue = null, selectedSubpart) {
         selectedSubpart?.let { subpart ->
@@ -70,7 +70,6 @@ fun SubpartRows(
         }
     }
 
-
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -83,19 +82,16 @@ fun SubpartRows(
             if (showDescription) {
                 item {
                     if (selectedSubpart != null && subpartDetails != null) {
-                        // ✅ Show Subpart details
                         ExpandableCard(
                             title = subpartDetails!!.scientificName,
                             description = subpartDetails!!.description
                         )
                     } else if (modelDetails != null) {
-                        // ✅ Show Main Model details as fallback
                         ExpandableCard(
                             title = modelDetails!!.scientificName,
                             description = modelDetails!!.description
                         )
                     } else {
-                        // 🔹 Show Loading Message
                         Text(
                             text = "Loading details...",
                             style = MaterialTheme.typography.bodyLarge,
@@ -104,16 +100,14 @@ fun SubpartRows(
                         )
                     }
                 }
-            }
-
-            else {
-                // 🔹 Show Subpart List
+            } else {
+                // 🔹 Show Subpart List with **Scientific Name**
                 items(subparts) { subpart ->
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 8.dp, horizontal = 8.dp)
-                            .clickable { onSubpartSelect(subpart) }, // Now updates globally
+                            .clickable { onSubpartSelect(subpart) }, // ✅ Still passes name for lookup
                         shadowElevation = 4.dp,
                         color = MaterialTheme.colorScheme.surface,
                         shape = MaterialTheme.shapes.medium
@@ -134,9 +128,13 @@ fun SubpartRows(
                                 )
                             }
 
-                            // 🔹 Middle: Subpart Name
+                            // 🔹 Middle: **Show Scientific Name Instead of Regular Name**
+                            val subpartEntity by produceState<SubpartEntity?>(initialValue = null, subpart) {
+                                viewModel.getSubpartByName(subpart.name).collect { value = it }
+                            }
+
                             Text(
-                                text = subpart.name,
+                                text = subpartEntity?.scientificName ?: subpart.name, // ✅ Show Scientific Name if Available
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.weight(1f)
@@ -151,7 +149,6 @@ fun SubpartRows(
         }
 
         if (currentModel != null) {
-            // 🔹 Button to toggle between Models & Subparts
             Button(
                 onClick = { toggleMainModels() },
                 modifier = Modifier
@@ -166,13 +163,12 @@ fun SubpartRows(
             }
         }
 
-        // 🔹 Floating Button - Toggles between Subpart Description & List
         val screenHeight = LocalConfiguration.current.screenHeightDp.dp
         val subpartRowsHeight = screenHeight * 0.40f
         val buttonSize = subpartRowsHeight * 0.3f
         if (currentModel != null) {
             FloatingActionButton(
-                onClick = { showDescription = !showDescription }, // Toggle Description
+                onClick = { showDescription = !showDescription },
                 shape = CircleShape,
                 containerColor = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
@@ -181,7 +177,7 @@ fun SubpartRows(
                     .padding(end = 16.dp)
             ) {
                 Text(
-                    text = if (showDescription) "M" else "D", // "M" for Model view, "D" for Description view
+                    text = if (showDescription) "M" else "D",
                     color = MaterialTheme.colorScheme.onPrimary,
                     style = MaterialTheme.typography.headlineMedium,
                     textAlign = TextAlign.Center
@@ -190,6 +186,7 @@ fun SubpartRows(
         }
     }
 }
+
 
 @Preview(showBackground = true)
 @Composable
