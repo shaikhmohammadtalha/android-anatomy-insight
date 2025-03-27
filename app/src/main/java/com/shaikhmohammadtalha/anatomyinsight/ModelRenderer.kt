@@ -31,7 +31,13 @@ import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
+/**
+ * Manages the rendering of 3D models using Filament's `ModelViewer`.
+ * Handles surface initialization, lifecycle management, model loading, and rendering.
+ */
 class ModelRenderer {
+
+    // Components for rendering
     private lateinit var surfaceView: SurfaceView
     private lateinit var lifecycle: Lifecycle
     private lateinit var choreographer: Choreographer
@@ -40,10 +46,14 @@ class ModelRenderer {
     private var surfaceInitialized = false
     private var pendingModelPath: String? = null
 
+    // Provides access to assets for model loading
     private val assets: AssetManager
         get() = surfaceView.context.assets
+
+    // Handles frame rendering
     private val frameScheduler = FrameCallback()
 
+    // Observes lifecycle events to manage rendering
     private val lifecycleObserver = object : DefaultLifecycleObserver {
         override fun onResume(owner: LifecycleOwner) {
             choreographer.postFrameCallback(frameScheduler)
@@ -59,6 +69,11 @@ class ModelRenderer {
         }
     }
 
+    /**
+     * Loads a 3D model from assets and renders it.
+     *
+     * @param filePath The path to the model file (GLB format).
+     */
     fun loadModel(filePath: String) {
         if (!surfaceInitialized) {
             println("Surface not initialized. Pending model: $filePath")
@@ -69,6 +84,7 @@ class ModelRenderer {
         println("Loading model from: $filePath") // Debug log
 
         try {
+            // Read model file into a ByteBuffer
             assets.open(filePath).use { input ->
                 ByteArrayOutputStream().use { output ->
                     val buffer = ByteArray(1024)
@@ -82,6 +98,8 @@ class ModelRenderer {
                         put(bytes)
                         rewind()
                     }
+
+                    // Load model into ModelViewer
                     modelViewer.loadModelGlb(byteBuffer)
                     modelViewer.transformToUnitCube()
                     println("Model loaded successfully: $filePath")
@@ -93,7 +111,12 @@ class ModelRenderer {
         }
     }
 
-
+    /**
+     * Initializes rendering when the SurfaceView becomes available.
+     *
+     * @param surfaceView The `SurfaceView` used for rendering.
+     * @param lifecycle The lifecycle of the associated activity/fragment.
+     */
     @SuppressLint("ClickableViewAccessibility")
     fun onSurfaceAvailable(surfaceView: SurfaceView, lifecycle: Lifecycle) {
         println("SurfaceView is available")
@@ -103,13 +126,17 @@ class ModelRenderer {
         choreographer = Choreographer.getInstance()
         lifecycle.addObserver(lifecycleObserver)
 
+        // Initialize UI helper for rendering
         uiHelper = UiHelper(UiHelper.ContextErrorPolicy.DONT_CHECK).apply {
             isOpaque = false
         }
 
+        // Initialize ModelViewer
         modelViewer = ModelViewer(surfaceView = surfaceView, uiHelper = uiHelper)
         surfaceInitialized = true
         println("Renderer initialized successfully!")
+
+        // Handle touch events for model interaction
         surfaceView.setOnTouchListener { _, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE, MotionEvent.ACTION_UP -> {
@@ -119,30 +146,42 @@ class ModelRenderer {
             true
         }
 
+        // Configure rendering quality settings
         modelViewer.view.apply {
             renderQuality = renderQuality.apply { hdrColorBuffer = View.QualityLevel.LOW }
             multiSampleAntiAliasingOptions = multiSampleAntiAliasingOptions.apply { enabled = true }
             ambientOcclusionOptions = ambientOcclusionOptions.apply { enabled = true }
             bloomOptions = bloomOptions.apply { enabled = true }
         }
+
         modelViewer.scene.skybox = null
-        // Load the HDR environment using the utility function
+
+        // Load the HDR environment for lighting
         createEnvironment(assets, modelViewer.engine, "environments/lightroom_14b.hdr", modelViewer.scene)
+
+        // Remove skybox, keeping only HDR lighting
+        // Remove below line to render the HDR environment
         modelViewer.scene.skybox = null
-        // Add additional lights using the utility function
+
+        // Add additional lighting sources
         createLights(modelViewer.engine, modelViewer.scene)
 
+        // Set blending mode for transparency
         modelViewer.view.blendMode = View.BlendMode.TRANSLUCENT
+
+        // Ensure the renderer clears the screen before each frame
         modelViewer.renderer.clearOptions = modelViewer.renderer.clearOptions.apply {
             clear = true
         }
 
+        // Load pending model if any
         pendingModelPath?.let {
             println("Loading pending model: $it")
             loadModel(it)
             pendingModelPath = null
         }
-        // 🔹 Force re-render after initialization
+
+        // Force an initial frame render
         surfaceView.post {
             println("Forcing a frame render")
             choreographer.postFrameCallback(frameScheduler)
@@ -151,6 +190,9 @@ class ModelRenderer {
         Log.d("ModelRenderer", "Renderer initialized successfully.")
     }
 
+    /**
+     * Handles frame rendering at regular intervals.
+     */
     private inner class FrameCallback : Choreographer.FrameCallback {
         override fun doFrame(frameTimeNanos: Long) {
             modelViewer.render(frameTimeNanos)

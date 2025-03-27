@@ -28,6 +28,13 @@ import com.google.android.filament.utils.IBLPrefilterContext
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
+/**
+ * Creates a directional light and adds it to the scene.
+ *
+ * @param engine The Filament engine instance.
+ * @param scene The scene where the light will be added.
+ */
+
 fun createLights(engine: Engine, scene: Scene) {
     val entityManager = EntityManager.get()
     val lightEntity = entityManager.create()
@@ -37,13 +44,21 @@ fun createLights(engine: Engine, scene: Scene) {
         .color(1.0f, 1.0f, 1.0f) // White light
         .intensity(50_000.0f) // Adjust intensity as needed
         .direction(0.0f, -1.0f, 0.0f) // Direction pointing downwards
-        .castShadows(true)
+        .castShadows(true) // Enable shadows
         .build(engine, lightEntity)
 
     // Add the light to the scene
     scene.addEntity(lightEntity)
 }
 
+/**
+ * Loads an HDR environment from assets and applies it to the scene.
+ *
+ * @param assets AssetManager to access asset files.
+ * @param engine The Filament engine instance.
+ * @param hdrFilePath Path to the HDR file in assets.
+ * @param scene The scene where the environment will be applied.
+ */
 fun createEnvironment(
     assets: AssetManager,
     engine: Engine,
@@ -51,7 +66,7 @@ fun createEnvironment(
     scene: Scene
 ) {
     try {
-        // Load the HDR file from assets
+        // Load the HDR file as a byte buffer
         assets.open(hdrFilePath).use { input ->
             val bytes = input.readBytes()
             val buffer = ByteBuffer.allocateDirect(bytes.size).apply {
@@ -60,39 +75,41 @@ fun createEnvironment(
                 rewind()
             }
 
-            // Load HDR texture and create equirectangular texture
+            // Convert HDR file into a texture
             val hdrTexture = HDRLoader.createTexture(engine, buffer)
             if (hdrTexture == null) {
                 Log.e("HDRUtils", "Failed to load HDR texture from file: $hdrFilePath")
                 return
             }
 
-            // Convert equirectangular texture to cubemap
+            // Convert HDR equirectangular texture to a cubemap
             val context = IBLPrefilterContext(engine)
             val equirectToCubemap = IBLPrefilterContext.EquirectangularToCubemap(context)
             val skyboxTexture = equirectToCubemap.run(hdrTexture)
-            engine.destroyTexture(hdrTexture) // Destroy original texture to free memory
 
-            // Create the specular filter for reflections
+            // Free memory of the original HDR texture
+            engine.destroyTexture(hdrTexture)
+
+            // Generate specular reflections
             val specularFilter = IBLPrefilterContext.SpecularFilter(context)
             val reflections = specularFilter.run(skyboxTexture)
 
-            // Create the indirect light (image-based lighting)
+            // Create Indirect Light (IBL - Image-Based Lighting)
             val ibl = IndirectLight.Builder()
                 .reflections(reflections)
-                .intensity(30_000.0f) // Adjust intensity as per your scene's requirement
+                .intensity(30_000.0f) // Adjust brightness if needed
                 .build(engine)
 
-            // Create the skybox
+            // Create a Skybox from the cubemap
             val skybox = Skybox.Builder()
                 .environment(skyboxTexture)
                 .build(engine)
 
-            // Apply indirect light and skybox to the scene
+            // Apply the lighting and skybox to the scene
             scene.skybox = skybox
             scene.indirectLight = ibl
 
-            // Cleanup
+            // Clean up resources
             specularFilter.destroy()
             equirectToCubemap.destroy()
             context.destroy()

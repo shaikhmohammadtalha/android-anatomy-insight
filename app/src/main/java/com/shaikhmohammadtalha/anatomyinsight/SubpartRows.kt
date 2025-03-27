@@ -15,18 +15,34 @@
  */
 package com.shaikhmohammadtalha.anatomyinsight
 
-import android.app.Application
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -37,77 +53,83 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.shaikhmohammadtalha.anatomyinsight.ui.theme.AnatomyInsightTheme
 import com.shaikhmohammadtalha.data.SubpartEntity
 import com.shaikhmohammadtalha.viewmodel.ModelViewModel
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
 
 @Composable
 fun SubpartRows(
-    subparts: List<AnatomyModel>,
-    onSubpartSelect: (AnatomyModel) -> Unit,
-    currentModel: AnatomyModel?,
-    selectedSubpart: AnatomyModel?,
-    showMainModels: Boolean,
-    toggleMainModels: () -> Unit,
-    listState: LazyListState = rememberLazyListState(),
-    viewModel: ModelViewModel
+    subparts: List<AnatomyModel>, // List of subparts associated with the selected model
+    onSubpartSelect: (AnatomyModel) -> Unit, // Callback when a subpart is selected
+    currentModel: AnatomyModel?, // Currently selected main model
+    selectedSubpart: AnatomyModel?, // Currently selected subpart (if any)
+    showMainModels: Boolean, // Flag to determine whether to display models or subparts
+    toggleMainModels: () -> Unit, // Callback to toggle between models and subparts
+    viewModel: ModelViewModel, // ViewModel providing subpart data
+    listState: LazyListState // Preserved scroll state for the subpart list
 ) {
+    // Local state to control whether the subpart description is shown
     var showDescription by remember { mutableStateOf(false) }
 
+    // Fetch details for the selected subpart asynchronously
     val subpartDetails by produceState<SubpartEntity?>(initialValue = null, selectedSubpart) {
         selectedSubpart?.let { subpart ->
             viewModel.getSubpartByName(subpart.name).collect { value = it }
         }
     }
 
+    // Separate scroll state for the description view
+    val descriptionScrollState = rememberScrollState()
+
+    // Fetch details for the currently selected main model asynchronously
     val modelDetails by produceState<SubpartEntity?>(initialValue = null, currentModel) {
         currentModel?.let { model ->
             viewModel.getSubpartByName(model.name).collect { value = it }
         }
     }
 
-    Box(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        LazyColumn(
-            state = listState,
-            modifier = Modifier
-                .fillMaxSize()
-                .background(color = MaterialTheme.colorScheme.background)
-        ) {
-            if (showDescription) {
-                item {
-                    if (selectedSubpart != null && subpartDetails != null) {
-                        ExpandableCard(
-                            title = subpartDetails!!.scientificName,
-                            description = subpartDetails!!.description
-                        )
-                    } else if (modelDetails != null) {
-                        ExpandableCard(
-                            title = modelDetails!!.scientificName,
-                            description = modelDetails!!.description
-                        )
-                    } else {
-                        Text(
-                            text = "Loading details...",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.padding(16.dp)
-                        )
-                    }
+    Box(modifier = Modifier.fillMaxSize()) {
+        if (showDescription) {
+            // Scrollable column for the description section to prevent scroll conflicts
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(descriptionScrollState)
+                    .background(color = MaterialTheme.colorScheme.background)
+            ) {
+                if (selectedSubpart != null && subpartDetails != null) {
+                    ExpandableCard(
+                        title = subpartDetails!!.scientificName,
+                        description = subpartDetails!!.description
+                    )
+                } else if (modelDetails != null) {
+                    ExpandableCard(
+                        title = modelDetails!!.scientificName,
+                        description = modelDetails!!.description
+                    )
+                } else {
+                    Text(
+                        text = "Loading details...",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(16.dp)
+                    )
                 }
-            } else {
-                // 🔹 Show Subpart List with **Scientific Name**
+            }
+        } else {
+            // Display the subpart list with the preserved scroll state
+            LazyColumn(
+                state = listState,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(color = MaterialTheme.colorScheme.background)
+            ) {
                 items(subparts) { subpart ->
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 8.dp, horizontal = 8.dp)
-                            .clickable { onSubpartSelect(subpart) }, // ✅ Still passes name for lookup
+                            .clickable { onSubpartSelect(subpart) },
                         shadowElevation = 4.dp,
                         color = MaterialTheme.colorScheme.surface,
                         shape = MaterialTheme.shapes.medium
@@ -119,7 +141,7 @@ fun SubpartRows(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            // 🔹 Left: Icon Button
+                            // Button for selecting a subpart
                             IconButton(onClick = { onSubpartSelect(subpart) }) {
                                 Icon(
                                     imageVector = Icons.Default.Star,
@@ -128,19 +150,19 @@ fun SubpartRows(
                                 )
                             }
 
-                            // 🔹 Middle: **Show Scientific Name Instead of Regular Name**
+                            // Fetch subpart entity details asynchronously
                             val subpartEntity by produceState<SubpartEntity?>(initialValue = null, subpart) {
                                 viewModel.getSubpartByName(subpart.name).collect { value = it }
                             }
 
+                            // Display the scientific name if available, otherwise fallback to the subpart name
                             Text(
-                                text = subpartEntity?.scientificName ?: subpart.name, // ✅ Show Scientific Name if Available
+                                text = subpartEntity?.scientificName ?: subpart.name,
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.weight(1f)
                             )
 
-                            // 🔹 Right: Empty space for future buttons (D & M)
                             Spacer(modifier = Modifier.width(50.dp))
                         }
                     }
@@ -148,6 +170,7 @@ fun SubpartRows(
             }
         }
 
+        // Toggle button to switch between the main model list and subpart view
         if (currentModel != null) {
             Button(
                 onClick = { toggleMainModels() },
@@ -157,12 +180,13 @@ fun SubpartRows(
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
                 Text(
-                    if (showMainModels) "View Subparts" else "Back to Models",
+                    text = if (showMainModels) "View Subparts" else "Back to Models",
                     color = MaterialTheme.colorScheme.onPrimary
                 )
             }
         }
 
+        // Floating button to toggle between subpart description and list
         val screenHeight = LocalConfiguration.current.screenHeightDp.dp
         val subpartRowsHeight = screenHeight * 0.40f
         val buttonSize = subpartRowsHeight * 0.3f
@@ -184,47 +208,5 @@ fun SubpartRows(
                 )
             }
         }
-    }
-}
-
-
-@Preview(showBackground = true)
-@Composable
-fun SubpartRowsPreview() {
-    val sampleSubparts = listOf(
-        AnatomyModel("Heart", "models/heart.glb"),
-        AnatomyModel("Lungs", "models/lungs.glb"),
-        AnatomyModel("Liver", "models/liver.glb"),
-        AnatomyModel("Kidney", "models/kidney.glb")
-    )
-
-    var selectedSubpart by remember { mutableStateOf<AnatomyModel?>(null) }
-    var showMainModels by remember { mutableStateOf(false) }
-
-    AnatomyInsightTheme(darkTheme = true) {
-        Surface {
-            SubpartRows(
-                subparts = sampleSubparts,
-                onSubpartSelect = { selectedSubpart = it }, // ✅ Update only selected subpart
-                currentModel = null, // ✅ No need for currentModel in preview
-                selectedSubpart = selectedSubpart,
-                showMainModels = showMainModels,
-                toggleMainModels = { showMainModels = !showMainModels },
-                viewModel = FakeModelViewModel() // ✅ Pass a fake ViewModel for preview
-            )
-        }
-    }
-}
-
-// ✅ Create a fake ViewModel for preview
-class FakeModelViewModel : ModelViewModel(Application()) {
-    override fun getSubpartByName(subpartName: String): Flow<SubpartEntity?> {
-        return flowOf(
-            SubpartEntity(
-                id = 1, modelId = 1, name = subpartName,
-                scientificName = "Scientific $subpartName",
-                description = "This is a detailed description of $subpartName."
-            )
-        )
     }
 }

@@ -20,8 +20,18 @@ import androidx.room.Dao
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
 
+/**
+ * DAO (Data Access Object) for querying subparts of anatomical models.
+ */
 @Dao
 interface SubpartDao {
+
+    /**
+     * Retrieves all subparts associated with a specific model.
+     *
+     * @param modelName Name of the model whose subparts are needed.
+     * @return A Flow of a list of `SubpartResult`, containing subpart details.
+     */
     @Query("""
         SELECT subparts.name, 
                subparts.scientific_name, 
@@ -33,22 +43,28 @@ interface SubpartDao {
     """)
     fun getSubpartsForModel(modelName: String): Flow<List<SubpartResult>>
 
+    /**
+     * Retrieves a single subpart by its name.
+     *
+     * @param subpartName The name of the subpart to fetch.
+     * @return A Flow emitting a single `SubpartEntity`, or null if not found.
+     */
     @Query("SELECT * FROM subparts WHERE name = :subpartName LIMIT 1")
     fun getSubpartByName(subpartName: String): Flow<SubpartEntity?>
-
 }
 
-
+/**
+ * Data class representing the result of a subpart query.
+ */
 data class SubpartResult(
     val name: String,
 
-    @ColumnInfo(name = "scientific_name") // ✅ Matches DB column name
+    @ColumnInfo(name = "scientific_name")
     val scientificName: String,
 
     @ColumnInfo(name = "description")
     val description: String,
 
     @ColumnInfo(name = "model_name")
-    val model_name: String
+    val modelName: String // Renamed for consistency
 )
-

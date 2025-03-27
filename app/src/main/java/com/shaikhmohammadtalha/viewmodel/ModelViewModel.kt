@@ -37,7 +37,7 @@ open class ModelViewModel(application: Application) : AndroidViewModel(applicati
             subparts.map { subpart ->
                 AnatomyModel(
                     name = subpart.name,
-                    filePath = "models/${subpart.model_name}/${subpart.name}.glb" // ✅ Generate dynamically
+                    filePath = "models/${subpart.modelName}/${subpart.name}.glb" // ✅ Generate dynamically
                 )
             }
         }

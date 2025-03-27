@@ -28,7 +28,7 @@ data class AnatomyModelEntity(
     @ColumnInfo(name = "name")
     val name: String,
 
-    @ColumnInfo(name = "scientific_name") // ✅ Ensure this matches the DB
+    @ColumnInfo(name = "scientific_name")
     val scientificName: String,
 
     @ColumnInfo(name = "file_path")

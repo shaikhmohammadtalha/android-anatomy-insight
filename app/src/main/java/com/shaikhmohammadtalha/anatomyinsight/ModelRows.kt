@@ -29,8 +29,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FloatingActionButton
@@ -38,7 +39,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -50,65 +50,62 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
-import com.shaikhmohammadtalha.anatomyinsight.ui.theme.AnatomyInsightTheme
 import com.shaikhmohammadtalha.data.AnatomyModelEntity
 import com.shaikhmohammadtalha.viewmodel.ModelViewModel
 
 @Composable
 fun ModelRows(
-    viewModel: ModelViewModel, // ✅ Use ViewModel instead of a hardcoded list
-    onModelSelect: (AnatomyModel) -> Unit,
-    currentModel: AnatomyModel?,
-    listState: LazyListState = rememberLazyListState(),
-    showMainModels: Boolean,
-    toggleMainModels: () -> Unit
+    models: List<AnatomyModel>, // List of models computed in the parent composable
+    viewModel: ModelViewModel,  // ViewModel providing data
+    onModelSelect: (AnatomyModel) -> Unit, // Callback when a model is selected
+    currentModel: AnatomyModel?, // Currently selected model (if any)
+    listState: LazyListState, // Preserved scroll state for the model list
+    showMainModels: Boolean, // Flag to indicate if the main model list is displayed
+    toggleMainModels: () -> Unit // Callback to toggle between models and subparts
 ) {
-    val modelEntities by viewModel.allModels.collectAsState(initial = emptyList())
+    // Local state to control whether the model description (ExpandableCard) is shown
+    var showDescription by remember { mutableStateOf(false) }
 
-    val models = modelEntities.map { entity ->
-        AnatomyModel(name = entity.name, filePath = entity.filePath)
-    }
-    var showDescription by remember { mutableStateOf(false) } // Toggles description visibility
+    // Separate scroll state for the description view to avoid interfering with list state
+    val descriptionScrollState = rememberScrollState()
 
+    // Obtain model details for the currently selected model asynchronously
     val modelDetails by produceState<AnatomyModelEntity?>(initialValue = null, currentModel) {
         currentModel?.let { model ->
             viewModel.getModelByName(model.name).collect { value = it }
         }
     }
 
-    Box(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        LazyColumn(
-            state = listState,
-            modifier = Modifier.fillMaxSize()
-        ) {
-            if (showDescription && currentModel != null) {
-                item {
-                    if (modelDetails != null) {
-                        // ✅ Show Model details when available
-                        ExpandableCard(
-                            title = modelDetails!!.scientificName, // ✅ Use scientific name instead of regular name
-                            description = modelDetails!!.description // ✅ Fetch description from DB
-                        )
-                    } else {
-                        // 🔹 Show Loading Message instead of crashing
-                        Text(
-                            text = "Loading model details...",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.padding(16.dp)
-                        )
-                    }
+    Box(modifier = Modifier.fillMaxSize()) {
+        if (showDescription && currentModel != null) {
+            // Use a scrollable Column for the description view to maintain a separate scroll state
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(descriptionScrollState)
+            ) {
+                if (modelDetails != null) {
+                    ExpandableCard(
+                        title = modelDetails!!.scientificName,
+                        description = modelDetails!!.description
+                    )
+                } else {
+                    Text(
+                        text = "Loading model details...",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(16.dp)
+                    )
                 }
             }
-            else {
-                // 🔹 Show the Model List
-
-
+        } else {
+            // Display the main model list using the provided LazyListState
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.fillMaxSize()
+            ) {
                 items(models.chunked(3)) { chunk ->
                     Surface(
                         color = MaterialTheme.colorScheme.background,
@@ -141,28 +138,30 @@ fun ModelRows(
                 }
             }
         }
+
+        // Toggle button to switch between the model list and the description view
         if (currentModel != null) {
             Button(
                 onClick = { toggleMainModels() },
                 modifier = Modifier
                     .padding(16.dp)
                     .align(Alignment.BottomCenter),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary) // Rich Red button
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
                 Text(
-                    if (showMainModels) "View Subparts" else "Back to Models",
+                    text = if (showMainModels) "View Subparts" else "Back to Models",
                     color = MaterialTheme.colorScheme.onPrimary
                 )
             }
         }
 
-        // 🔹 Floating Button - Toggles between Description & Model List
+        // Floating button to toggle between the description view and the list view
         val screenHeight = LocalConfiguration.current.screenHeightDp.dp
         val modelRowsHeight = screenHeight * 0.40f
         val buttonSize = modelRowsHeight * 0.3f
         if (currentModel != null) {
             FloatingActionButton(
-                onClick = { showDescription = !showDescription }, // Toggle Description
+                onClick = { showDescription = !showDescription },
                 shape = CircleShape,
                 containerColor = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
@@ -171,7 +170,7 @@ fun ModelRows(
                     .padding(end = 16.dp)
             ) {
                 Text(
-                    text = if (showDescription) "M" else "D", // Show "M" when in description mode, "D" when in model list
+                    text = if (showDescription) "M" else "D",
                     color = MaterialTheme.colorScheme.onPrimary,
                     style = MaterialTheme.typography.headlineMedium,
                     textAlign = TextAlign.Center
@@ -190,26 +189,26 @@ fun ModelListItem(model: AnatomyModel) {
             .padding(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        val imagePath = "file:///android_asset/image/${
-            model.name.replace(" ", "").lowercase()
-        }.png"
+        // Construct the image path from the model name
+        val imagePath = "file:///android_asset/image/${model.name.replace(" ", "").lowercase()}.png"
 
-        // 🔹 Box ensures consistent space
+        // Display the model image with consistent size and rounded corners
         Box(
             modifier = Modifier
-                .size(140.dp) // Fixed size for consistency
+                .size(140.dp)
                 .clip(MaterialTheme.shapes.medium)
         ) {
             Image(
                 painter = rememberAsyncImagePainter(imagePath),
                 contentDescription = model.name,
-                contentScale = ContentScale.Fit, // Ensures consistent size
+                contentScale = ContentScale.Fit,
                 modifier = Modifier.fillMaxSize()
             )
         }
 
         Spacer(modifier = Modifier.height(8.dp))
 
+        // Display the model name and a prompt to tap
         Column(
             modifier = Modifier.padding(horizontal = 4.dp),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -231,24 +230,3 @@ fun ModelListItem(model: AnatomyModel) {
         }
     }
 }
-
-@Preview(showBackground = true)
-@Composable
-fun ModelRowsPreview() {
-    val fakeModelViewModel = object {
-    }
-
-    var showMainModels by remember { mutableStateOf(true) } // Toggle state
-
-    AnatomyInsightTheme(darkTheme = true) {
-        ModelRows(
-            viewModel = fakeModelViewModel as ModelViewModel, // ✅ Pass a fake ViewModel
-            onModelSelect = {}, // No-op for preview
-            currentModel = null, // No selected model in preview
-            showMainModels = showMainModels,
-            toggleMainModels = { showMainModels = !showMainModels }
-        )
-    }
-}
-
-
