@@ -29,6 +29,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -40,9 +41,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.google.android.filament.utils.Utils
+import com.shaikhmohammadtalha.anatomyinsight.ui.SearchScreen
+import com.shaikhmohammadtalha.anatomyinsight.ui.TopNavBar
 import com.shaikhmohammadtalha.anatomyinsight.ui.theme.AnatomyInsightTheme
 import com.shaikhmohammadtalha.viewmodel.ModelViewModel
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -53,20 +61,25 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private val modelViewModel: ModelViewModel by viewModels() // ✅ Added
+    private val modelViewModel: ModelViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
+            val navController = rememberNavController() // Navigation controller
             AnatomyInsightTheme {
-                MainActivityContent(modelViewModel)
+                NavHost(navController, startDestination = "main") {
+                    composable("main") { MainActivityContent(modelViewModel, navController) }
+                    composable("search") { SearchScreen(navController, modelViewModel) }
+                }
             }
         }
     }
 }
 
+
 @Composable
-fun MainActivityContent(modelViewModel: ModelViewModel) {
+fun MainActivityContent(modelViewModel: ModelViewModel, navController: NavHostController) {
     val renderer = remember { ModelRenderer() }
     var currentModel by remember { mutableStateOf<AnatomyModel?>(null) }
     var showMainModels by remember { mutableStateOf(true) } // Controls whether the main model list or subparts are displayed
@@ -93,76 +106,128 @@ fun MainActivityContent(modelViewModel: ModelViewModel) {
         }
     }
 
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background // Apply theme-based background color
-    ) {
-        Column(modifier = Modifier.fillMaxSize()) {
+    LaunchedEffect(navController.currentBackStackEntry) {
+        val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
+        val selectedSubpartId: Int? = savedStateHandle?.get("selectedSubpartId")
 
-            // Model Display Section (Top 60% of the screen)
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(0.60f)
-                    .background(MaterialTheme.colorScheme.secondary) // Background color for model display
-            ) {
-                if (currentModel != null) {
-                    println("Displaying model: ${currentModel?.name}") // Debug log
-                    AndroidView(factory = { context ->
-                        SurfaceView(context).apply {
-                            renderer.onSurfaceAvailable(this, lifecycleOwner.value.lifecycle)
+        if (selectedSubpartId != null) {
+            // Fetch the selected subpart details
+            modelViewModel.getSubpartById(selectedSubpartId).collectLatest { subpartEntity ->
+                subpartEntity?.let { subpart ->
+                    // Fetch the corresponding model using the subpart's model ID
+                    modelViewModel.getModelById(subpart.modelId).collectLatest { modelEntity ->
+                        modelEntity?.let { model ->
+                            // Set the current model only if it's not already set
+                            if (currentModel?.name != model.name) {
+                                currentModel = AnatomyModel(
+                                    name = model.name,
+                                    filePath = model.filePath
+                                )
+                            }
+
+                            // ✅ Fetch the correct subpart model file path
+                            modelViewModel.fetchSubParts(model.name).collectLatest { subparts ->
+                                val matchedSubpart = subparts.find { it.name == subpart.name }
+                                matchedSubpart?.let {
+                                    selectedSubpart = it
+
+                                    // ✅ Load the correct subpart model
+                                    renderer.loadModel(it.filePath)
+                                }
+                            }
+                            // Show the subpart details
+                            showMainModels = false
                         }
-                    })
-                } else {
-                    println("No model selected") // Debug log
+                    }
                 }
             }
 
-            // Model List Section (Bottom 40% of the screen)
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(0.40f)
-                    .background(MaterialTheme.colorScheme.background) // Ensure consistent background
-            ) {
-                val scope = rememberCoroutineScope()
+            // Clear saved state to avoid re-triggering effect
+            savedStateHandle.remove<Int>("selectedSubpartId")
+        }
+    }
 
-                // Toggle between main model list and subpart list
-                if (showMainModels) {
-                    ModelRows(
-                        models = models, // Pass computed models instead of directly using ViewModel
-                        viewModel = modelViewModel,
-                        onModelSelect = { model ->
-                            // Reset subpart scroll state when a new model is selected
-                            scope.launch {
-                                subpartListState.scrollToItem(0)
+
+
+
+
+    Column(modifier = Modifier.fillMaxSize()) {
+
+        TopNavBar(onSearchClick = { navController.navigate("search") })
+
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.background // Apply theme-based background color
+        ) {
+            Column(modifier = Modifier.fillMaxSize()) {
+
+                // Model Display Section (Top 60% of the screen)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(0.60f)
+                        .background(MaterialTheme.colorScheme.secondary) // Background color for model display
+                ) {
+                    if (currentModel != null) {
+                        println("Displaying model: ${currentModel?.name}") // Debug log
+                        AndroidView(factory = { context ->
+                            SurfaceView(context).apply {
+                                renderer.onSurfaceAvailable(this, lifecycleOwner.value.lifecycle)
                             }
-                            currentModel = model
-                            showMainModels = false
-                            renderer.loadModel(model.filePath)
-                        },
-                        currentModel = currentModel,
-                        showMainModels = showMainModels,
-                        toggleMainModels = { showMainModels = !showMainModels },
-                        listState = modelListState
-                    )
-                } else {
-                    SubpartRows(
-                        subparts = subParts,
-                        onSubpartSelect = { subpart ->
-                            selectedSubpart = subpart
-                            renderer.loadModel(subpart.filePath)
-                        },
-                        currentModel = currentModel,
-                        selectedSubpart = selectedSubpart,
-                        showMainModels = showMainModels,
-                        toggleMainModels = { showMainModels = !showMainModels },
-                        viewModel = modelViewModel,
-                        listState = subpartListState // Maintain subpart scroll state
-                    )
+                        })
+                    } else {
+                        println("No model selected") // Debug log
+                    }
+                }
+
+                // Model List Section (Bottom 40% of the screen)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(0.40f)
+                        .background(MaterialTheme.colorScheme.background) // Ensure consistent background
+                ) {
+                    val scope = rememberCoroutineScope()
+
+                    // Toggle between main model list and subpart list
+                    if (showMainModels) {
+                        ModelRows(
+                            models = models, // Pass computed models instead of directly using ViewModel
+                            viewModel = modelViewModel,
+                            onModelSelect = { model ->
+                                // Reset subpart scroll state when a new model is selected
+                                scope.launch {
+                                    subpartListState.scrollToItem(0)
+                                }
+                                currentModel = model
+                                showMainModels = false
+                                renderer.loadModel(model.filePath)
+                            },
+                            currentModel = currentModel,
+                            showMainModels = showMainModels,
+                            toggleMainModels = { showMainModels = !showMainModels },
+                            listState = modelListState
+                        )
+                    } else {
+                        SubpartRows(
+                            subparts = subParts,
+                            onSubpartSelect = { subpart ->
+                                selectedSubpart = subpart
+                                renderer.loadModel(subpart.filePath)
+                            },
+                            currentModel = currentModel,
+                            selectedSubpart = selectedSubpart,
+                            showMainModels = showMainModels,
+                            toggleMainModels = { showMainModels = !showMainModels },
+                            viewModel = modelViewModel,
+                            listState = subpartListState // Maintain subpart scroll state
+                        )
+                    }
                 }
             }
         }
     }
 }
+
+
 

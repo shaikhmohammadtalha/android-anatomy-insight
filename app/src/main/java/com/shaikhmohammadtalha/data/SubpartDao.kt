@@ -51,6 +51,18 @@ interface SubpartDao {
      */
     @Query("SELECT * FROM subparts WHERE name = :subpartName LIMIT 1")
     fun getSubpartByName(subpartName: String): Flow<SubpartEntity?>
+
+    @Query("""
+    SELECT * FROM subparts 
+    WHERE scientific_name LIKE '%' || :query || '%' 
+    OR substr(description, 1, instr(description || CHAR(10), CHAR(10)) - 1) LIKE '%' || :query || '%' 
+    LIMIT 20
+""")
+    fun searchSubpartsByScientificName(query: String): Flow<List<SubpartEntity>>
+
+    @Query("SELECT * FROM subparts WHERE id = :subpartId")
+    fun getSubpartById(subpartId: Int): Flow<SubpartEntity?>
+
 }
 
 /**

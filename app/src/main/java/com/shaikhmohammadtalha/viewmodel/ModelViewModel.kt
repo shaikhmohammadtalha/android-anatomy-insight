@@ -43,6 +43,11 @@ open class ModelViewModel(application: Application) : AndroidViewModel(applicati
         }
     }
 
+    fun searchSubpartsByScientificName(query: String): Flow<List<SubpartEntity>> {
+        return subpartDao.searchSubpartsByScientificName(query)
+    }
+
+
     open fun getSubpartByName(subpartName: String): Flow<SubpartEntity?> {
         return subpartDao.getSubpartByName(subpartName).map { it }
     }
@@ -51,5 +56,11 @@ open class ModelViewModel(application: Application) : AndroidViewModel(applicati
         return modelDao.getModelByName(modelName).map { it }
     }
 
+    fun getSubpartById(subpartId: Int): Flow<SubpartEntity?> {
+        return subpartDao.getSubpartById(subpartId).map { it }
+    }
+    fun getModelById(modelId: Int): Flow<AnatomyModelEntity?> {
+        return modelDao.getModelById(modelId).map { it }
+    }
 }
 

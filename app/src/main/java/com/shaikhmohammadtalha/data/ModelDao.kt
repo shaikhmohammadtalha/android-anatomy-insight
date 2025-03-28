@@ -26,5 +26,8 @@ interface ModelDao {
 
     @Query("SELECT * FROM models WHERE name = :modelName LIMIT 1")
     fun getModelByName(modelName: String): Flow<AnatomyModelEntity>
+
+    @Query("SELECT * FROM models WHERE id = :modelId")
+    fun getModelById(modelId: Int): Flow<AnatomyModelEntity?>
 }
 
