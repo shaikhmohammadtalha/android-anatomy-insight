@@ -15,16 +15,20 @@
  */
 package com.shaikhmohammadtalha.anatomyinsight
 
+import android.os.Build
 import android.os.Bundle
 import android.view.SurfaceView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -39,6 +43,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavHostController
@@ -63,8 +68,10 @@ class MainActivity : ComponentActivity() {
 
     private val modelViewModel: ModelViewModel by viewModels()
 
+    @RequiresApi(Build.VERSION_CODES.R)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        actionBar?.hide()
         setContent {
             val navController = rememberNavController() // Navigation controller
             AnatomyInsightTheme {
@@ -76,7 +83,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
 
 @Composable
 fun MainActivityContent(modelViewModel: ModelViewModel, navController: NavHostController) {
@@ -105,6 +111,10 @@ fun MainActivityContent(modelViewModel: ModelViewModel, navController: NavHostCo
             modelViewModel.fetchSubParts(model.name).collect { value = it }
         }
     }
+
+    var isSearchMode by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+
 
     LaunchedEffect(navController.currentBackStackEntry) {
         val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
@@ -141,31 +151,44 @@ fun MainActivityContent(modelViewModel: ModelViewModel, navController: NavHostCo
                     }
                 }
             }
-
             // Clear saved state to avoid re-triggering effect
             savedStateHandle.remove<Int>("selectedSubpartId")
         }
     }
 
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .navigationBarsPadding()
+    ) {
 
-
-
-
-    Column(modifier = Modifier.fillMaxSize()) {
-
-        TopNavBar(onSearchClick = { navController.navigate("search") })
+        TopNavBar(
+            isSearchMode = isSearchMode,
+            searchQuery = searchQuery,
+            onSearchQueryChange = { searchQuery = it },
+            onSearchClick = {
+                isSearchMode = true
+                navController.navigate("search")
+            },
+            onBackClick = {
+                isSearchMode = false
+                searchQuery = ""  // Clear search when exiting
+                navController.popBackStack()
+            }
+        )
 
         Surface(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize(),
             color = MaterialTheme.colorScheme.background // Apply theme-based background color
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
 
-                // Model Display Section (Top 60% of the screen)
+                // Model Display Section (Top 50% of the screen)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(0.60f)
+                        .weight(0.50f)
                         .background(MaterialTheme.colorScheme.secondary) // Background color for model display
                 ) {
                     if (currentModel != null) {
@@ -180,12 +203,14 @@ fun MainActivityContent(modelViewModel: ModelViewModel, navController: NavHostCo
                     }
                 }
 
-                // Model List Section (Bottom 40% of the screen)
+                // Model List Section (Bottom 35% of the screen)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(0.40f)
-                        .background(MaterialTheme.colorScheme.background) // Ensure consistent background
+                        .weight(0.50f)
+                        .background(MaterialTheme.colorScheme.background)
+                        .padding(vertical = 8.dp)// Ensure consistent background
+                        .navigationBarsPadding()
                 ) {
                     val scope = rememberCoroutineScope()
 
@@ -228,6 +253,3 @@ fun MainActivityContent(modelViewModel: ModelViewModel, navController: NavHostCo
         }
     }
 }
-
-
-

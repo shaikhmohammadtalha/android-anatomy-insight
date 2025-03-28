@@ -16,6 +16,7 @@
 package com.shaikhmohammadtalha.anatomyinsight
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,19 +26,17 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -51,7 +50,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.shaikhmohammadtalha.data.SubpartEntity
@@ -88,124 +88,172 @@ fun SubpartRows(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        if (showDescription) {
-            // Scrollable column for the description section to prevent scroll conflicts
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(descriptionScrollState)
-                    .background(color = MaterialTheme.colorScheme.background)
-            ) {
-                if (selectedSubpart != null && subpartDetails != null) {
-                    ExpandableCard(
-                        title = subpartDetails!!.scientificName,
-                        description = subpartDetails!!.description
-                    )
-                } else if (modelDetails != null) {
-                    ExpandableCard(
-                        title = modelDetails!!.scientificName,
-                        description = modelDetails!!.description
-                    )
-                } else {
-                    Text(
-                        text = "Loading details...",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(16.dp)
-                    )
+    Column(modifier = Modifier.fillMaxSize()) {
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .weight(0.8f)
+        ) {
+            if (showDescription) {
+                // Scrollable column for the description section to prevent scroll conflicts
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(descriptionScrollState)
+                        .background(color = MaterialTheme.colorScheme.background)
+                ) {
+                    if (selectedSubpart != null && subpartDetails != null) {
+                        ExpandableCard(
+                            title = subpartDetails!!.scientificName,
+                            description = subpartDetails!!.description
+                        )
+                    } else if (modelDetails != null) {
+                        ExpandableCard(
+                            title = modelDetails!!.scientificName,
+                            description = modelDetails!!.description
+                        )
+                    } else {
+                        Text(
+                            text = "Loading details...",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
                 }
-            }
-        } else {
-            // Display the subpart list with the preserved scroll state
-            LazyColumn(
-                state = listState,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(color = MaterialTheme.colorScheme.background)
-            ) {
-                items(subparts) { subpart ->
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp, horizontal = 8.dp)
-                            .clickable { onSubpartSelect(subpart) },
-                        shadowElevation = 4.dp,
-                        color = MaterialTheme.colorScheme.surface,
-                        shape = MaterialTheme.shapes.medium
-                    ) {
-                        Row(
+            } else {
+                // Display the subpart list with the preserved scroll state
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(color = MaterialTheme.colorScheme.background)
+                ) {
+                    items(subparts) { subpart ->
+                        Surface(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(12.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            // Button for selecting a subpart
-                            IconButton(onClick = { onSubpartSelect(subpart) }) {
-                                Icon(
-                                    imageVector = Icons.Default.Star,
-                                    contentDescription = "Subpart Icon",
-                                    tint = MaterialTheme.colorScheme.primary
+                                .padding(vertical = 8.dp, horizontal = 8.dp)
+                                .clickable { onSubpartSelect(subpart) }
+                                .border(
+                                    width = if (selectedSubpart?.name == subpart.name) 1.dp else 0.dp, // Border if selected
+                                    color = if (selectedSubpart?.name == subpart.name) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                                    shape = MaterialTheme.shapes.medium
                                 )
+                                .shadow(
+                                    elevation = if (selectedSubpart?.name == subpart.name) 12.dp else 4.dp, // Glow effect
+                                    shape = MaterialTheme.shapes.medium
+                                ),
+                            shadowElevation = 4.dp,
+                            color = MaterialTheme.colorScheme.surface,
+                            shape = MaterialTheme.shapes.medium
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                // Button for selecting a subpart
+                                IconButton(onClick = { onSubpartSelect(subpart) }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Star,
+                                        contentDescription = "Subpart Icon",
+                                        tint = if (selectedSubpart?.name == subpart.name) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                                    )
+                                }
+
+                                // Fetch subpart entity details asynchronously
+                                val subpartEntity by produceState<SubpartEntity?>(
+                                    initialValue = null,
+                                    subpart
+                                ) {
+                                    viewModel.getSubpartByName(subpart.name).collect { value = it }
+                                }
+
+                                // Display the scientific name if available, otherwise fallback to the subpart name
+                                Text(
+                                    text = subpartEntity?.scientificName ?: subpart.name,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.weight(1f)
+                                )
+
+                                Spacer(modifier = Modifier.width(50.dp))
                             }
-
-                            // Fetch subpart entity details asynchronously
-                            val subpartEntity by produceState<SubpartEntity?>(initialValue = null, subpart) {
-                                viewModel.getSubpartByName(subpart.name).collect { value = it }
-                            }
-
-                            // Display the scientific name if available, otherwise fallback to the subpart name
-                            Text(
-                                text = subpartEntity?.scientificName ?: subpart.name,
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.weight(1f)
-                            )
-
-                            Spacer(modifier = Modifier.width(50.dp))
                         }
                     }
                 }
             }
         }
-
-        // Toggle button to switch between the main model list and subpart view
         if (currentModel != null) {
-            Button(
-                onClick = { toggleMainModels() },
+            Box(
                 modifier = Modifier
-                    .padding(16.dp)
-                    .align(Alignment.BottomCenter),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                    .weight(0.15f)
+                    .fillMaxWidth()
+                    .padding(4.dp)
             ) {
-                Text(
-                    text = if (showMainModels) "View Subparts" else "Back to Models",
-                    color = MaterialTheme.colorScheme.onPrimary
-                )
-            }
-        }
 
-        // Floating button to toggle between subpart description and list
-        val screenHeight = LocalConfiguration.current.screenHeightDp.dp
-        val subpartRowsHeight = screenHeight * 0.40f
-        val buttonSize = subpartRowsHeight * 0.3f
-        if (currentModel != null) {
-            FloatingActionButton(
-                onClick = { showDescription = !showDescription },
-                shape = CircleShape,
-                containerColor = MaterialTheme.colorScheme.primary,
-                modifier = Modifier
-                    .size(buttonSize)
-                    .align(Alignment.CenterEnd)
-                    .padding(end = 16.dp)
-            ) {
-                Text(
-                    text = if (showDescription) "M" else "D",
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    style = MaterialTheme.typography.headlineMedium,
-                    textAlign = TextAlign.Center
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Button(
+                        onClick = { toggleMainModels() },
+                        modifier = Modifier
+                            .weight(0.8f)
+                            .shadow(
+                                12.dp, shape = RoundedCornerShape(12.dp), // ✅ Glow Effect
+                                ambientColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
+                                spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+                            )
+                            .border(
+                                3.dp, Brush.radialGradient( // ✅ Gradient Border
+                                    colors = listOf(
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                                    )
+                                ), RoundedCornerShape(20.dp)
+                            ),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surface)
+                    ) {
+                        Text(
+                            text = if (showMainModels) "View Subparts" else "Back to Models",
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    Button(
+                        onClick = { showDescription = !showDescription },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surface),
+                        modifier = Modifier
+                            .weight(0.2f)
+                            .shadow(
+                                12.dp, shape = RoundedCornerShape(12.dp), // ✅ Glow Effect
+                                ambientColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
+                                spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+                            )
+                            .border(
+                                3.dp, Brush.radialGradient( // ✅ Gradient Border
+                                    colors = listOf(
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                                    )
+                                ), RoundedCornerShape(20.dp)
+                            )
+                    ) {
+                        Text(
+                            text = if (showDescription) "M" else "D",
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
             }
         }
     }

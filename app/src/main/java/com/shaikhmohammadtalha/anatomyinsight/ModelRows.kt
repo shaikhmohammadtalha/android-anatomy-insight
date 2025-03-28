@@ -16,6 +16,7 @@
 package com.shaikhmohammadtalha.anatomyinsight
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,15 +27,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -47,10 +48,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
 import com.shaikhmohammadtalha.data.AnatomyModelEntity
 import com.shaikhmohammadtalha.viewmodel.ModelViewModel
@@ -77,113 +81,162 @@ fun ModelRows(
             viewModel.getModelByName(model.name).collect { value = it }
         }
     }
+    Column(modifier = Modifier.fillMaxSize()) {
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        if (showDescription && currentModel != null) {
-            // Use a scrollable Column for the description view to maintain a separate scroll state
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(descriptionScrollState)
-            ) {
-                if (modelDetails != null) {
-                    ExpandableCard(
-                        title = modelDetails!!.scientificName,
-                        description = modelDetails!!.description
-                    )
-                } else {
-                    Text(
-                        text = "Loading model details...",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(16.dp)
-                    )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .weight(0.8f)
+        ) {
+            if (showDescription && currentModel != null) {
+                // Use a scrollable Column for the description view to maintain a separate scroll state
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(descriptionScrollState)
+                ) {
+                    if (modelDetails != null) {
+                        ExpandableCard(
+                            title = modelDetails!!.scientificName,
+                            description = modelDetails!!.description
+                        )
+                    } else {
+                        Text(
+                            text = "Loading model details...",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
                 }
-            }
-        } else {
-            // Display the main model list using the provided LazyListState
-            LazyColumn(
-                state = listState,
-                modifier = Modifier.fillMaxSize()
-            ) {
-                items(models.chunked(3)) { chunk ->
-                    Surface(
-                        color = MaterialTheme.colorScheme.background,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            horizontalArrangement = Arrangement.SpaceEvenly
+            } else {
+                // Display the main model list using the provided LazyListState
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    items(models.chunked(3)) { chunk ->
+                        Surface(
+                            color = MaterialTheme.colorScheme.background,
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            chunk.forEach { model ->
-                                Surface(
-                                    onClick = { onModelSelect(model) },
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .padding(horizontal = 8.dp),
-                                    shadowElevation = 8.dp,
-                                    shape = MaterialTheme.shapes.large,
-                                    color = MaterialTheme.colorScheme.surface,
-                                ) {
-                                    ModelListItem(model)
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                horizontalArrangement = Arrangement.SpaceEvenly
+                            ) {
+                                chunk.forEach { model ->
+                                    Surface(
+                                        onClick = { onModelSelect(model) },
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .padding(horizontal = 8.dp)
+                                            .border(
+                                                width = if (currentModel?.name == model.name) 1.dp else 0.dp, // Add border if selected
+                                                color = if (currentModel?.name == model.name) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                                                shape = MaterialTheme.shapes.large
+                                            )
+                                            .shadow(
+                                                elevation = if (currentModel?.name == model.name) 12.dp else 8.dp, // Increase elevation for selected
+                                                shape = MaterialTheme.shapes.large
+                                            ),
+                                        shadowElevation = 8.dp,
+                                        shape = MaterialTheme.shapes.large,
+                                        color = MaterialTheme.colorScheme.surface,
+                                    ) {
+                                        ModelListItem(
+                                            model, currentModel,
+                                            viewModel = viewModel
+                                        )
+                                    }
                                 }
-                            }
-                            if (chunk.size < 2) {
-                                Spacer(modifier = Modifier.weight(1f))
+                                if (chunk.size < 2) {
+                                    Spacer(modifier = Modifier.weight(1f))
+                                }
                             }
                         }
                     }
                 }
             }
         }
-
-        // Toggle button to switch between the model list and the description view
         if (currentModel != null) {
-            Button(
-                onClick = { toggleMainModels() },
+            Box(
                 modifier = Modifier
-                    .padding(16.dp)
-                    .align(Alignment.BottomCenter),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                    .weight(0.15f)
+                    .fillMaxWidth()
+                    .padding(4.dp)
             ) {
-                Text(
-                    text = if (showMainModels) "View Subparts" else "Back to Models",
-                    color = MaterialTheme.colorScheme.onPrimary
-                )
-            }
-        }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Button(
+                        onClick = { toggleMainModels() },
+                        modifier = Modifier
+                            .weight(0.8f)
+                            .shadow(
+                                12.dp, shape = RoundedCornerShape(12.dp), // ✅ Glow Effect
+                                ambientColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
+                                spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+                            )
+                            .border(
+                                3.dp, Brush.radialGradient( // ✅ Gradient Border
+                                    colors = listOf(
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                                    )
+                                ), RoundedCornerShape(20.dp)
+                            ),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surface)
+                    ) {
+                        Text(
+                            text = if (showMainModels) "View Subparts" else "Back to Models",
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
 
-        // Floating button to toggle between the description view and the list view
-        val screenHeight = LocalConfiguration.current.screenHeightDp.dp
-        val modelRowsHeight = screenHeight * 0.40f
-        val buttonSize = modelRowsHeight * 0.3f
-        if (currentModel != null) {
-            FloatingActionButton(
-                onClick = { showDescription = !showDescription },
-                shape = CircleShape,
-                containerColor = MaterialTheme.colorScheme.primary,
-                modifier = Modifier
-                    .size(buttonSize)
-                    .align(Alignment.CenterEnd)
-                    .padding(end = 16.dp)
-            ) {
-                Text(
-                    text = if (showDescription) "M" else "D",
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    style = MaterialTheme.typography.headlineMedium,
-                    textAlign = TextAlign.Center
-                )
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    Button(
+                        onClick = { showDescription = !showDescription },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surface),
+                        modifier = Modifier
+                            .weight(0.2f)
+                            .shadow(
+                                12.dp, shape = RoundedCornerShape(12.dp), // ✅ Glow Effect
+                                ambientColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
+                                spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+                            )
+                            .border(
+                                3.dp, Brush.radialGradient( // ✅ Gradient Border
+                                    colors = listOf(
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                                    )
+                                ), RoundedCornerShape(20.dp)
+                            )
+                    ) {
+                        Text(
+                            text = if (showDescription) "M" else "D",
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-fun ModelListItem(model: AnatomyModel) {
+fun ModelListItem(model: AnatomyModel, currentModel: AnatomyModel?, viewModel: ModelViewModel) {
+    val modelDetails by produceState<AnatomyModelEntity?>(initialValue = null, model) {
+        viewModel.getModelByName(model.name).collect { value = it }
+    }
     Column(
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = Modifier
             .fillMaxWidth()
             .padding(12.dp),
@@ -195,7 +248,7 @@ fun ModelListItem(model: AnatomyModel) {
         // Display the model image with consistent size and rounded corners
         Box(
             modifier = Modifier
-                .size(140.dp)
+                .size(100.dp)
                 .clip(MaterialTheme.shapes.medium)
         ) {
             Image(
@@ -213,20 +266,31 @@ fun ModelListItem(model: AnatomyModel) {
             modifier = Modifier.padding(horizontal = 4.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = model.name,
-                color = MaterialTheme.colorScheme.onPrimary,
-                style = MaterialTheme.typography.bodyLarge,
-                maxLines = 1,
-                textAlign = TextAlign.Center
-            )
-            Text(
-                text = "Tap to view",
-                color = MaterialTheme.colorScheme.outline,
-                style = MaterialTheme.typography.bodyMedium,
-                maxLines = 1,
-                textAlign = TextAlign.Center
-            )
+            modelDetails?.scientificName?.let { scientificName ->
+                val cleanedName =
+                    scientificName.substringBefore("(").trim() // ✅ Remove content after "("
+
+                Text(
+                    text = cleanedName, // ✅ Display only the cleaned name
+                    color = if (currentModel?.name == model.name) MaterialTheme.colorScheme.primary // ✅ RichRed for selected model
+                    else MaterialTheme.colorScheme.onPrimary,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                    maxLines = 2,
+                    textAlign = TextAlign.Center
+                )
+            }
+
+            if (currentModel?.name != model.name) {
+                Text(
+                    text = "Tap to view",
+                    Modifier
+                        .padding(top = 4.dp),
+                    color = MaterialTheme.colorScheme.outline,
+                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 14.sp),
+                    maxLines = 1,
+                    textAlign = TextAlign.Center
+                )
+            }
         }
     }
 }

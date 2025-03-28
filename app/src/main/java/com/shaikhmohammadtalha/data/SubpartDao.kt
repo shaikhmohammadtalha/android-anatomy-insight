@@ -54,8 +54,13 @@ interface SubpartDao {
 
     @Query("""
     SELECT * FROM subparts 
-    WHERE scientific_name LIKE '%' || :query || '%' 
-    OR substr(description, 1, instr(description || CHAR(10), CHAR(10)) - 1) LIKE '%' || :query || '%' 
+    WHERE id NOT IN (
+        SELECT id FROM subparts ORDER BY id LIMIT 6
+    ) 
+    AND (
+        scientific_name LIKE '%' || :query || '%' 
+        OR substr(description, 1, instr(description || CHAR(10), CHAR(10)) - 1) LIKE '%' || :query || '%' 
+    )    
     LIMIT 20
 """)
     fun searchSubpartsByScientificName(query: String): Flow<List<SubpartEntity>>

@@ -17,17 +17,18 @@ package com.shaikhmohammadtalha.anatomyinsight.ui
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -46,6 +47,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -53,7 +55,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import com.shaikhmohammadtalha.anatomyinsight.AnatomyModel
 import com.shaikhmohammadtalha.data.SubpartEntity
 import com.shaikhmohammadtalha.viewmodel.ModelViewModel
 
@@ -67,25 +68,30 @@ fun SearchScreen(navController: NavHostController, modelViewModel: ModelViewMode
     val searchResults by modelViewModel.searchSubpartsByScientificName(searchQuery)
         .collectAsState(initial = emptyList())
 
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Search") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }
             )
         }
-    ) {
-        Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+    ) { paddingValues ->
+    Column(modifier = Modifier
+        .fillMaxSize()
+        .padding(paddingValues)
+        .padding(16.dp)) {
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
                 placeholder = { Text("Search scientific names...") },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search Icon") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -111,35 +117,48 @@ fun SearchScreen(navController: NavHostController, modelViewModel: ModelViewMode
 fun SearchResultItem(subpart: SubpartEntity, navController: NavHostController) {
     val firstLine = subpart.description.substringBefore("\n").trim() // ✅ Extract first line
 
-    Card(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
-            .clickable {
-                // Save selected subpart ID and model ID in savedStateHandle
-                navController.previousBackStackEntry
-                    ?.savedStateHandle
-                    ?.set("selectedSubpartId", subpart.id)
-
-                navController.previousBackStackEntry
-                    ?.savedStateHandle
-                    ?.set("selectedModelId", subpart.modelId)
-
-                // Navigate back to main screen
-                navController.popBackStack()
-            },
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            .shadow(
+                elevation = 4.dp,  // ✅ Simulated glow effect
+                shape = RoundedCornerShape(12.dp),
+                ambientColor = MaterialTheme.colorScheme.outline,
+                spotColor = MaterialTheme.colorScheme.outline
+            )
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = subpart.scientificName,
-                style = MaterialTheme.typography.titleMedium
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = formatText(firstLine), // ✅ Format text properly
-                style = MaterialTheme.typography.bodySmall
-            )
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp)
+                .clickable {
+                    // Save selected subpart ID and model ID in savedStateHandle
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("selectedSubpartId", subpart.id)
+
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("selectedModelId", subpart.modelId)
+
+                    // Navigate back to main screen
+                    navController.popBackStack()
+                },
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = subpart.scientificName,
+                    color = MaterialTheme.colorScheme.outline,
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = formatText(firstLine), // ✅ Format text properly
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
         }
     }
 }

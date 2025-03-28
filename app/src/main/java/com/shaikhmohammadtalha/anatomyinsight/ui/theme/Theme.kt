@@ -26,23 +26,24 @@ private val DarkColorScheme = darkColorScheme(
 
 private val LightColorScheme = lightColorScheme(
     primary = RichRed,
-    onPrimary = SoftWhite,
-    primaryContainer = LightGray,
-    secondary = DarkGray,
+    onPrimary = SofterGray,
+    primaryContainer = SofterGray, // Softer gray
+    secondary = LightSoft, // Softer dark gray for text
     onSecondary = SoftWhite,
     tertiary = SoftWhite,
     onTertiary = DarkGray,
-    background = SoftWhite,
-    surface = LightGray,
+    background = LightSoft, // Light but softer background
+    surface = SofterGraySurfaces, // Softer gray for surfaces
     onSurface = DarkGray,
     outline = TealBlue
 )
+
 
 @Composable
 fun AnatomyInsightTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {

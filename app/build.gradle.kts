@@ -15,7 +15,7 @@ android {
         minSdk = 27 // Minimum supported Android version
         targetSdk = 36 // Target Android version
         versionCode = 1 // Internal app version
-        versionName = "1.0" // User-visible app version
+        versionName = "1.1" // User-visible app version
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner" // Test runner
     }

@@ -17,13 +17,16 @@ package com.shaikhmohammadtalha.anatomyinsight
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Card
@@ -39,8 +42,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -60,97 +64,112 @@ fun ExpandableCard(
     val rotationState by animateFloatAsState(
         targetValue = if (expandedState) 180f else 0f, label = ""
     )
-
-    Card(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .animateContentSize()
-            .clip(MaterialTheme.shapes.medium),
-        shape = MaterialTheme.shapes.medium,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        onClick = { expandedState = !expandedState }
+            .padding(horizontal = 12.dp, vertical = 8.dp) // ✅ Adds padding around the card
+            .shadow(
+                elevation = 8.dp, // ✅ Creates a glow effect
+                shape = RoundedCornerShape(12.dp), // ✅ Rounded corners
+                ambientColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f), // ✅ Glowing color
+                spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+            )
     ) {
-        Column(
+        Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp)
+                .border(2.dp, Brush.radialGradient( // ✅ Gradient border for glow
+                    colors = listOf(
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                    )
+                ), RoundedCornerShape(12.dp))
+                .animateContentSize(),
+            shape = MaterialTheme.shapes.medium,
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            onClick = { expandedState = !expandedState }
         ) {
-            // 🔹 Title + Expand Button
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    modifier = Modifier.weight(6f),
-                    text = title,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = MaterialTheme.typography.headlineMedium.fontSize,
-                    fontWeight = FontWeight.Bold,
-                    lineHeight = MaterialTheme.typography.headlineMedium.fontSize * 1.2f, // ✅ Fix added here
-                    maxLines = if (expandedState) Int.MAX_VALUE else 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                IconButton(
-                    modifier = Modifier
-                        .weight(1f)
-                        .rotate(rotationState),
-                    onClick = { expandedState = !expandedState }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowDropDown,
-                        contentDescription = "Drop-Down Arrow",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-            // ✅ Fix: Add spacing between Title and Description
-            Spacer(modifier = Modifier.height(8.dp))
-
-
-            // 🔹 Description Handling (Always Follows Proper Formatting)
             Column(
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-                modifier = Modifier.padding(top = 8.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp)
             ) {
-                val lines = description.split("\n").filter { it.isNotBlank() }
-
-                // ✅ Parse the text to handle Bold (`**text**`) and Bullets (`-`)
-                val formattedText = buildAnnotatedString {
-                    lines.forEach { line ->
-                        if (line.startsWith("-")) {
-                            // Bullet Point Formatting
-                            append("• ")
-                            val textWithoutBullet = line.removePrefix("-").trim()
-                            appendStyledText(textWithoutBullet)
-                        } else {
-                            // Normal Paragraph or Bold Text Handling
-                            appendStyledText(line)
-                        }
-                        append("\n") // Add a line break after each item
-                    }
-                }
-
-                // ✅ Show formatted text (Collapses after 3 lines)
-                if (expandedState) {
+                // 🔹 Title + Expand Button
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Text(
-                        text = formattedText,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                } else {
-                    Text(
-                        text = formattedText,
-                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.weight(6f),
+                        text = title,
                         color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 3,
+                        fontSize = MaterialTheme.typography.headlineMedium.fontSize,
+                        fontWeight = FontWeight.Bold,
+                        lineHeight = MaterialTheme.typography.headlineMedium.fontSize * 1.2f, // ✅ Fix added here
+                        maxLines = if (expandedState) Int.MAX_VALUE else 1,
                         overflow = TextOverflow.Ellipsis
                     )
+
+                    IconButton(
+                        modifier = Modifier
+                            .weight(1f)
+                            .rotate(rotationState),
+                        onClick = { expandedState = !expandedState }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowDropDown,
+                            contentDescription = "Drop-Down Arrow",
+                            tint = MaterialTheme.colorScheme.outline
+                        )
+                    }
+                }
+                // ✅ Fix: Add spacing between Title and Description
+                Spacer(modifier = Modifier.height(8.dp))
+
+
+                // 🔹 Description Handling (Always Follows Proper Formatting)
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.padding(top = 8.dp)
+                ) {
+                    val lines = description.split("\n").filter { it.isNotBlank() }
+
+                    // ✅ Parse the text to handle Bold (`**text**`) and Bullets (`-`)
+                    val formattedText = buildAnnotatedString {
+                        lines.forEach { line ->
+                            if (line.startsWith("-")) {
+                                // Bullet Point Formatting
+                                append("• ")
+                                val textWithoutBullet = line.removePrefix("-").trim()
+                                appendStyledText(textWithoutBullet)
+                            } else {
+                                // Normal Paragraph or Bold Text Handling
+                                appendStyledText(line)
+                            }
+                            append("\n") // Add a line break after each item
+                        }
+                    }
+
+                    // ✅ Show formatted text (Collapses after 3 lines)
+                    if (expandedState) {
+                        Text(
+                            text = formattedText,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    } else {
+                        Text(
+                            text = formattedText,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 3,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                 }
             }
         }
     }
 }
-
 // 🔹 Helper function to handle Bold (`**text**`) in Text
 fun AnnotatedString.Builder.appendStyledText(input: String) {
     val regex = Regex("\\*\\*(.*?)\\*\\*") // Detects **bold text**
