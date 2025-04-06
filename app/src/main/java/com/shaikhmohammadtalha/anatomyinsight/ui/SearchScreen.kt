@@ -62,7 +62,10 @@ import com.shaikhmohammadtalha.viewmodel.ModelViewModel
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchScreen(navController: NavHostController, modelViewModel: ModelViewModel) {
+fun SearchScreen(
+    navController: NavHostController,
+    modelViewModel: ModelViewModel
+) {
     var searchQuery by remember { mutableStateOf("") }
 
     val searchResults by modelViewModel.searchSubpartsByScientificName(searchQuery)
@@ -77,6 +80,14 @@ fun SearchScreen(navController: NavHostController, modelViewModel: ModelViewMode
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
+                }
+            )
+        },
+        bottomBar = {
+            BottomNavBar(
+                navController = navController,
+                onSearchClick = {
+                    // Already in search, no need to navigate again
                 }
             )
         }
@@ -133,17 +144,12 @@ fun SearchResultItem(subpart: SubpartEntity, navController: NavHostController) {
                 .fillMaxWidth()
                 .padding(vertical = 4.dp)
                 .clickable {
-                    // Save selected subpart ID and model ID in savedStateHandle
-                    navController.previousBackStackEntry
-                        ?.savedStateHandle
-                        ?.set("selectedSubpartId", subpart.id)
+                    val mainBackStackEntry = navController.getBackStackEntry("main")
+                    mainBackStackEntry.savedStateHandle["selectedSubpartId"] = subpart.id
+                    mainBackStackEntry.savedStateHandle["selectedModelId"] = subpart.modelId
 
-                    navController.previousBackStackEntry
-                        ?.savedStateHandle
-                        ?.set("selectedModelId", subpart.modelId)
-
-                    // Navigate back to main screen
                     navController.popBackStack()
+
                 },
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {

@@ -11,39 +11,37 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = RichRed,
-    onPrimary = SoftWhite,
-    primaryContainer = DarkGray,
-    secondary = AmoledBlack,
-    onSecondary = SoftWhite,
-    tertiary = SoftWhite,
-    onTertiary = DarkGray,
-    background = DarkGray,
-    surface = Charcoal,
-    onSurface = SoftWhite,
-    outline = TealBlue
+    primary = Primary,
+    onPrimary = OnPrimary,
+    primaryContainer = PrimaryContainer,
+    secondary = Secondary,
+    onSecondary = OnSecondary,
+    tertiary = Tertiary,
+    onTertiary = OnTertiary,
+    background = Background,
+    surface = Surface,
+    onSurface = OnSurface,
+    outline = Outline
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = RichRed,
-    onPrimary = SofterGray,
-    primaryContainer = SofterGray, // Softer gray
-    secondary = LightSoft, // Softer dark gray for text
-    onSecondary = SoftWhite,
-    tertiary = SoftWhite,
-    onTertiary = DarkGray,
-    background = LightSoft, // Light but softer background
-    surface = SofterGraySurfaces, // Softer gray for surfaces
-    onSurface = DarkGray,
-    outline = TealBlue
+    primary = Primary,
+    onPrimary = Secondary,
+    primaryContainer = LightSurface,
+    secondary = LightBackground,
+    onSecondary = OnPrimary,
+    tertiary = Tertiary,
+    onTertiary = OnTertiary,
+    background = LightBackground,
+    surface = LightSurface,
+    onSurface = OnLightSurface,
+    outline = Outline
 )
-
 
 @Composable
 fun AnatomyInsightTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = false,
+    dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -51,7 +49,6 @@ fun AnatomyInsightTheme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
     }

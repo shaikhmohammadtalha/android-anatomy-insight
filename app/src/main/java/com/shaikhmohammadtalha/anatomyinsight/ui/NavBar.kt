@@ -37,7 +37,8 @@ fun TopNavBar(
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
     onSearchClick: () -> Unit,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    onMenuClick: () -> Unit
 ) {
     TopAppBar(
         title = {
@@ -59,7 +60,7 @@ fun TopNavBar(
         },
         navigationIcon = {
             if (!isSearchMode) {
-                IconButton(onClick = { /* Handle menu click */ }) {
+                IconButton(onClick = onMenuClick) { // Trigger menu opening
                     Icon(Icons.Default.Menu, contentDescription = "Menu")
                 }
             }

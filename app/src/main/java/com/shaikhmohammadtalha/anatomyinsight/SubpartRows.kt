@@ -130,7 +130,7 @@ fun SubpartRows(
                         .fillMaxSize()
                         .background(color = MaterialTheme.colorScheme.background)
                 ) {
-                    items(subparts) { subpart ->
+                    items(subparts.drop(1)) { subpart ->
                         Surface(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -222,7 +222,7 @@ fun SubpartRows(
                     ) {
                         Text(
                             text = if (showMainModels) "View Subparts" else "Back to Models",
-                            color = MaterialTheme.colorScheme.onPrimary
+                            color = MaterialTheme.colorScheme.outline
                         )
                     }
 
@@ -249,7 +249,7 @@ fun SubpartRows(
                     ) {
                         Text(
                             text = if (showDescription) "M" else "D",
-                            color = MaterialTheme.colorScheme.onPrimary,
+                            color = MaterialTheme.colorScheme.outline,
                             textAlign = TextAlign.Center
                         )
                     }

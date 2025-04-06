@@ -27,11 +27,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -51,33 +50,44 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.google.android.filament.utils.Utils
+import com.shaikhmohammadtalha.anatomyinsight.ui.BottomNavBar
+import com.shaikhmohammadtalha.anatomyinsight.ui.DoubleBackToExitHandler
 import com.shaikhmohammadtalha.anatomyinsight.ui.SearchScreen
-import com.shaikhmohammadtalha.anatomyinsight.ui.TopNavBar
+import com.shaikhmohammadtalha.anatomyinsight.ui.SettingsScreen
 import com.shaikhmohammadtalha.anatomyinsight.ui.theme.AnatomyInsightTheme
 import com.shaikhmohammadtalha.viewmodel.ModelViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
-
     companion object {
         init {
             Utils.init() // Initialize Filament
         }
     }
-
     private val modelViewModel: ModelViewModel by viewModels()
-
     @RequiresApi(Build.VERSION_CODES.R)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         actionBar?.hide()
         setContent {
             val navController = rememberNavController() // Navigation controller
+
             AnatomyInsightTheme {
                 NavHost(navController, startDestination = "main") {
-                    composable("main") { MainActivityContent(modelViewModel, navController) }
-                    composable("search") { SearchScreen(navController, modelViewModel) }
+                    composable("main") {
+                        MainActivityContent(modelViewModel, navController)
+                    }
+                    composable("search") {
+                        SearchScreen(
+                            navController = navController,
+                            modelViewModel = modelViewModel
+                        )
+                    }
+
+                    composable("settings") {
+                        SettingsScreen(navController)
+                    }
                 }
             }
         }
@@ -86,6 +96,9 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MainActivityContent(modelViewModel: ModelViewModel, navController: NavHostController) {
+    DoubleBackToExitHandler(navController)
+
+
     val renderer = remember { ModelRenderer() }
     var currentModel by remember { mutableStateOf<AnatomyModel?>(null) }
     var showMainModels by remember { mutableStateOf(true) } // Controls whether the main model list or subparts are displayed
@@ -113,7 +126,6 @@ fun MainActivityContent(modelViewModel: ModelViewModel, navController: NavHostCo
     }
 
     var isSearchMode by remember { mutableStateOf(false) }
-    var searchQuery by remember { mutableStateOf("") }
 
 
     LaunchedEffect(navController.currentBackStackEntry) {
@@ -156,100 +168,95 @@ fun MainActivityContent(modelViewModel: ModelViewModel, navController: NavHostCo
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .navigationBarsPadding()
-    ) {
 
-        TopNavBar(
-            isSearchMode = isSearchMode,
-            searchQuery = searchQuery,
-            onSearchQueryChange = { searchQuery = it },
-            onSearchClick = {
-                isSearchMode = true
-                navController.navigate("search")
-            },
-            onBackClick = {
-                isSearchMode = false
-                searchQuery = ""  // Clear search when exiting
-                navController.popBackStack()
-            }
-        )
-
-        Surface(
-            modifier = Modifier
-                .fillMaxSize(),
-            color = MaterialTheme.colorScheme.background // Apply theme-based background color
-        ) {
-            Column(modifier = Modifier.fillMaxSize()) {
-
-                // Model Display Section (Top 50% of the screen)
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(0.50f)
-                        .background(MaterialTheme.colorScheme.secondary) // Background color for model display
-                ) {
-                    if (currentModel != null) {
-                        println("Displaying model: ${currentModel?.name}") // Debug log
-                        AndroidView(factory = { context ->
-                            SurfaceView(context).apply {
-                                renderer.onSurfaceAvailable(this, lifecycleOwner.value.lifecycle)
-                            }
-                        })
-                    } else {
-                        println("No model selected") // Debug log
-                    }
+    Scaffold(
+        bottomBar = {
+            BottomNavBar(
+                navController = navController,
+                // Pass drawerState
+                onSearchClick = {
+                    isSearchMode = true
+                    navController.navigate("search")
                 }
+            )
 
-                // Model List Section (Bottom 35% of the screen)
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(0.50f)
-                        .background(MaterialTheme.colorScheme.background)
-                        .padding(vertical = 8.dp)// Ensure consistent background
-                        .navigationBarsPadding()
-                ) {
-                    val scope = rememberCoroutineScope()
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
 
-                    // Toggle between main model list and subpart list
-                    if (showMainModels) {
-                        ModelRows(
-                            models = models, // Pass computed models instead of directly using ViewModel
-                            viewModel = modelViewModel,
-                            onModelSelect = { model ->
-                                // Reset subpart scroll state when a new model is selected
-                                scope.launch {
-                                    subpartListState.scrollToItem(0)
-                                }
-                                currentModel = model
-                                showMainModels = false
-                                renderer.loadModel(model.filePath)
-                            },
-                            currentModel = currentModel,
-                            showMainModels = showMainModels,
-                            toggleMainModels = { showMainModels = !showMainModels },
-                            listState = modelListState
-                        )
-                    } else {
-                        SubpartRows(
-                            subparts = subParts,
-                            onSubpartSelect = { subpart ->
-                                selectedSubpart = subpart
-                                renderer.loadModel(subpart.filePath)
-                            },
-                            currentModel = currentModel,
-                            selectedSubpart = selectedSubpart,
-                            showMainModels = showMainModels,
-                            toggleMainModels = { showMainModels = !showMainModels },
-                            viewModel = modelViewModel,
-                            listState = subpartListState // Maintain subpart scroll state
-                        )
-                    }
+        ) {
+
+            // Model Display Section (Top 50% of the screen)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(0.50f)
+                    .background(MaterialTheme.colorScheme.secondary) // Background color for model display
+            ) {
+                if (currentModel != null) {
+                    println("Displaying model: ${currentModel?.name}") // Debug log
+                    AndroidView(factory = { context ->
+                        SurfaceView(context).apply {
+                            renderer.onSurfaceAvailable(
+                                this,
+                                lifecycleOwner.value.lifecycle
+                            )
+                        }
+                    })
+                } else {
+                    println("No model selected") // Debug log
+                }
+            }
+
+            // Model List Section (Bottom 35% of the screen)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(0.50f)
+                    .background(MaterialTheme.colorScheme.background)
+                    .padding(vertical = 8.dp)// Ensure consistent background
+            ) {
+                val scope = rememberCoroutineScope()
+
+                // Toggle between main model list and subpart list
+                if (showMainModels) {
+                    ModelRows(
+                        models = models, // Pass computed models instead of directly using ViewModel
+                        viewModel = modelViewModel,
+                        onModelSelect = { model ->
+                            // Reset subpart scroll state when a new model is selected
+                            scope.launch {
+                                subpartListState.scrollToItem(0)
+                            }
+                            currentModel = model
+                            showMainModels = false
+                            renderer.loadModel(model.filePath)
+                        },
+                        currentModel = currentModel,
+                        showMainModels = showMainModels,
+                        toggleMainModels = { showMainModels = !showMainModels },
+                        listState = modelListState
+                    )
+                } else {
+                    SubpartRows(
+                        subparts = subParts,
+                        onSubpartSelect = { subpart ->
+                            selectedSubpart = subpart
+                            renderer.loadModel(subpart.filePath)
+                        },
+                        currentModel = currentModel,
+                        selectedSubpart = selectedSubpart,
+                        showMainModels = showMainModels,
+                        toggleMainModels = { showMainModels = !showMainModels },
+                        viewModel = modelViewModel,
+                        listState = subpartListState // Maintain subpart scroll state
+                    )
                 }
             }
         }
     }
 }
+

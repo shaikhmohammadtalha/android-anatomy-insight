@@ -193,7 +193,7 @@ fun ModelRows(
                     ) {
                         Text(
                             text = if (showMainModels) "View Subparts" else "Back to Models",
-                            color = MaterialTheme.colorScheme.onPrimary
+                            color = MaterialTheme.colorScheme.outline
                         )
                     }
 
@@ -220,7 +220,7 @@ fun ModelRows(
                     ) {
                         Text(
                             text = if (showDescription) "M" else "D",
-                            color = MaterialTheme.colorScheme.onPrimary,
+                            color = MaterialTheme.colorScheme.outline,
                             textAlign = TextAlign.Center
                         )
                     }
@@ -273,7 +273,7 @@ fun ModelListItem(model: AnatomyModel, currentModel: AnatomyModel?, viewModel: M
                 Text(
                     text = cleanedName, // ✅ Display only the cleaned name
                     color = if (currentModel?.name == model.name) MaterialTheme.colorScheme.primary // ✅ RichRed for selected model
-                    else MaterialTheme.colorScheme.onPrimary,
+                    else MaterialTheme.colorScheme.outline,
                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
                     maxLines = 2,
                     textAlign = TextAlign.Center
