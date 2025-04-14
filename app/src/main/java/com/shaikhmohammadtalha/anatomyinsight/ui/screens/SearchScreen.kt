@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.shaikhmohammadtalha.anatomyinsight.ui
+package com.shaikhmohammadtalha.anatomyinsight.ui.screens
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.clickable
@@ -55,22 +55,28 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import com.shaikhmohammadtalha.data.SubpartEntity
-import com.shaikhmohammadtalha.viewmodel.ModelViewModel
+import com.shaikhmohammadtalha.anatomyinsight.data.SubpartEntity
+import com.shaikhmohammadtalha.anatomyinsight.ui.components.BottomNavBar
+import com.shaikhmohammadtalha.anatomyinsight.viewmodel.ModelViewModel
 
-
+/**
+ * Composable screen for searching anatomical subparts by scientific name.
+ * Displays matching results and navigates to the selected model/subpart.
+ *
+ * @param navController Navigation controller for screen transitions
+ * @param modelViewModel ViewModel used to fetch subpart data
+ */
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(
-    navController: NavHostController,
-    modelViewModel: ModelViewModel
+    navController: NavHostController, modelViewModel: ModelViewModel
 ) {
     var searchQuery by remember { mutableStateOf("") }
 
+    // Reactive list of matching subparts from the database
     val searchResults by modelViewModel.searchSubpartsByScientificName(searchQuery)
         .collectAsState(initial = emptyList())
-
 
     Scaffold(
         topBar = {
@@ -84,18 +90,16 @@ fun SearchScreen(
             )
         },
         bottomBar = {
-            BottomNavBar(
-                navController = navController,
-                onSearchClick = {
-                    // Already in search, no need to navigate again
-                }
-            )
+            BottomNavBar(navController = navController, onSearchClick = {})
         }
     ) { paddingValues ->
-    Column(modifier = Modifier
-        .fillMaxSize()
-        .padding(paddingValues)
-        .padding(16.dp)) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp)
+        ) {
+            // Input field for user queries
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
@@ -111,6 +115,7 @@ fun SearchScreen(
                 Text("No results found", style = MaterialTheme.typography.bodyMedium)
             }
 
+            // Display list of matched subparts
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState())
             ) {
@@ -118,22 +123,27 @@ fun SearchScreen(
                     SearchResultItem(subpart, navController)
                 }
             }
-
-
         }
     }
 }
 
+/**
+ * Card item representing a single search result.
+ * Triggers navigation to the model screen and loads the subpart when clicked.
+ *
+ * @param subpart The subpart entity from the database
+ * @param navController Used to navigate back to the main screen with selected data
+ */
 @Composable
 fun SearchResultItem(subpart: SubpartEntity, navController: NavHostController) {
-    val firstLine = subpart.description.substringBefore("\n").trim() // ✅ Extract first line
+    val firstLine = subpart.description.substringBefore("\n").trim()
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
             .shadow(
-                elevation = 4.dp,  // ✅ Simulated glow effect
+                elevation = 4.dp,
                 shape = RoundedCornerShape(12.dp),
                 ambientColor = MaterialTheme.colorScheme.outline,
                 spotColor = MaterialTheme.colorScheme.outline
@@ -144,12 +154,16 @@ fun SearchResultItem(subpart: SubpartEntity, navController: NavHostController) {
                 .fillMaxWidth()
                 .padding(vertical = 4.dp)
                 .clickable {
+                    // Pass subpart and model IDs to main screen
                     val mainBackStackEntry = navController.getBackStackEntry("main")
                     mainBackStackEntry.savedStateHandle["selectedSubpartId"] = subpart.id
                     mainBackStackEntry.savedStateHandle["selectedModelId"] = subpart.modelId
 
-                    navController.popBackStack()
-
+                    navController.navigate("main") {
+                        popUpTo("main") { inclusive = false }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
                 },
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
@@ -161,7 +175,7 @@ fun SearchResultItem(subpart: SubpartEntity, navController: NavHostController) {
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = formatText(firstLine), // ✅ Format text properly
+                    text = formatText(firstLine),
                     style = MaterialTheme.typography.bodySmall
                 )
             }
@@ -169,11 +183,16 @@ fun SearchResultItem(subpart: SubpartEntity, navController: NavHostController) {
     }
 }
 
-
+/**
+ * Formats a string to render bold text using **double asterisks** markup.
+ *
+ * @param input Raw text input potentially containing bold syntax
+ * @return Annotated string with styles applied
+ */
 @Composable
 fun formatText(input: String): AnnotatedString {
     return buildAnnotatedString {
-        val regex = Regex("\\*\\*(.*?)\\*\\*") // Detects **bold text**
+        val regex = Regex("\\*\\*(.*?)\\*\\*")
         val matches = regex.findAll(input)
 
         var lastIndex = 0
@@ -181,18 +200,15 @@ fun formatText(input: String): AnnotatedString {
             val start = match.range.first
             val end = match.range.last + 1
 
-            // Append normal text before bold part
             append(input.substring(lastIndex, start))
 
-            // Apply bold style
             withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
-                append(match.groupValues[1]) // Extracts text inside **bold**
+                append(match.groupValues[1])
             }
 
             lastIndex = end
         }
 
-        // Append any remaining normal text
         if (lastIndex < input.length) {
             append(input.substring(lastIndex))
         }

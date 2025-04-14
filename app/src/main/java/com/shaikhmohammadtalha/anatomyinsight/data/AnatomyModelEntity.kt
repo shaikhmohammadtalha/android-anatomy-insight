@@ -13,36 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.shaikhmohammadtalha.data
+package com.shaikhmohammadtalha.anatomyinsight.data
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
-import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
 
-@Entity(
-    tableName = "subparts",
-    foreignKeys = [ForeignKey(
-        entity = AnatomyModelEntity::class,
-        parentColumns = ["id"],
-        childColumns = ["model_id"],
-        onDelete = ForeignKey.CASCADE
-    )]
-)
-data class SubpartEntity(
+/**
+ * Room Entity representing an anatomical model stored in the database.
+ *
+ * This class defines the structure of the `models` table which holds metadata
+ * about each anatomical model including its name, scientific name, file path, and description.
+ */
+@Entity(tableName = "models")
+data class AnatomyModelEntity(
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "id")
-    val id: Int = 0,
-
-    @ColumnInfo(name = "model_id")
-    val modelId: Int,
+    val id: Int = 0,  // Auto-generated primary key
 
     @ColumnInfo(name = "name")
-    val name: String,
+    val name: String,  // Common name of the model
 
-    @ColumnInfo(name = "scientific_name") // ✅ Ensure this exists
-    val scientificName: String = "Unknown",
+    @ColumnInfo(name = "scientific_name")
+    val scientificName: String,  // Scientific name of the anatomical model
+
+    @ColumnInfo(name = "file_path")
+    val filePath: String,  // Path to the corresponding 3D model file
 
     @ColumnInfo(name = "description")
-    val description: String = "No description available"
+    val description: String  // Informational text or description of the model
 )

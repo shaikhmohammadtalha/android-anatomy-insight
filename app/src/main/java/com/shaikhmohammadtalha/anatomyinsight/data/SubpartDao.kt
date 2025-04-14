@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.shaikhmohammadtalha.data
+package com.shaikhmohammadtalha.anatomyinsight.data
 
 import androidx.room.ColumnInfo
 import androidx.room.Dao
@@ -22,15 +22,16 @@ import kotlinx.coroutines.flow.Flow
 
 /**
  * DAO (Data Access Object) for querying subparts of anatomical models.
+ * Provides methods to fetch subparts by model name, ID, or perform full-text search.
  */
 @Dao
 interface SubpartDao {
 
     /**
-     * Retrieves all subparts associated with a specific model.
+     * Retrieves all subparts associated with a given anatomical model.
      *
-     * @param modelName Name of the model whose subparts are needed.
-     * @return A Flow of a list of `SubpartResult`, containing subpart details.
+     * @param modelName Name of the parent model.
+     * @return A Flow emitting a list of SubpartResult entries.
      */
     @Query("""
         SELECT subparts.name, 
@@ -44,14 +45,21 @@ interface SubpartDao {
     fun getSubpartsForModel(modelName: String): Flow<List<SubpartResult>>
 
     /**
-     * Retrieves a single subpart by its name.
+     * Retrieves a subpart entity by its unique name.
      *
-     * @param subpartName The name of the subpart to fetch.
-     * @return A Flow emitting a single `SubpartEntity`, or null if not found.
+     * @param subpartName Name of the subpart.
+     * @return A Flow emitting the corresponding SubpartEntity, or null if not found.
      */
     @Query("SELECT * FROM subparts WHERE name = :subpartName LIMIT 1")
     fun getSubpartByName(subpartName: String): Flow<SubpartEntity?>
 
+    /**
+     * Searches subparts by scientific name or the first line of their description.
+     * Skips the first 6 entries to avoid displaying commonly used or default entries.
+     *
+     * @param query Search string.
+     * @return A Flow emitting up to 20 matching SubpartEntity entries.
+     */
     @Query("""
     SELECT * FROM subparts 
     WHERE id NOT IN (
@@ -61,17 +69,22 @@ interface SubpartDao {
         scientific_name LIKE '%' || :query || '%' 
         OR substr(description, 1, instr(description || CHAR(10), CHAR(10)) - 1) LIKE '%' || :query || '%' 
     )    
-    LIMIT 20
+    LIMIT :limit
 """)
-    fun searchSubpartsByScientificName(query: String): Flow<List<SubpartEntity>>
+    fun searchSubpartsByScientificName(query: String, limit: Int): Flow<List<SubpartEntity>>
 
+    /**
+     * Fetches a subpart by its database ID.
+     *
+     * @param subpartId ID of the subpart.
+     * @return A Flow emitting the SubpartEntity, or null if not found.
+     */
     @Query("SELECT * FROM subparts WHERE id = :subpartId")
     fun getSubpartById(subpartId: Int): Flow<SubpartEntity?>
-
 }
 
 /**
- * Data class representing the result of a subpart query.
+ * Represents a simplified projection of subpart data used in model-subpart join queries.
  */
 data class SubpartResult(
     val name: String,
@@ -83,5 +96,5 @@ data class SubpartResult(
     val description: String,
 
     @ColumnInfo(name = "model_name")
-    val modelName: String // Renamed for consistency
+    val modelName: String
 )

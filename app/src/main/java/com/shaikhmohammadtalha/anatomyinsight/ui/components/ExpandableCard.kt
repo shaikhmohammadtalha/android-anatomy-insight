@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.shaikhmohammadtalha.anatomyinsight
+package com.shaikhmohammadtalha.anatomyinsight.ui.components
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
@@ -51,60 +51,66 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.shaikhmohammadtalha.anatomyinsight.ui.theme.AnatomyInsightTheme
 
+/**
+ * ExpandableCard displays a titled content section that can toggle between expanded and collapsed states.
+ * It supports rich text formatting including bold and bullet points in the description.
+ *
+ * @param title The title displayed at the top of the card
+ * @param description Multi-line formatted text shown when expanded
+ */
 @Composable
 fun ExpandableCard(
     title: String,
     description: String
 ) {
     var expandedState by remember { mutableStateOf(true) }
+
+    // Arrow rotation animation for expand/collapse icon
     val rotationState by animateFloatAsState(
-        targetValue = if (expandedState) 180f else 0f, label = ""
+        targetValue = if (expandedState) 180f else 0f,
+        label = ""
     )
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 8.dp) // ✅ Adds padding around the card
+            .padding(horizontal = 12.dp, vertical = 8.dp)
             .shadow(
-                elevation = 8.dp, // ✅ Creates a glow effect
-                shape = RoundedCornerShape(12.dp), // ✅ Rounded corners
-                ambientColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f), // ✅ Glowing color
+                elevation = 8.dp,
+                shape = RoundedCornerShape(12.dp),
+                ambientColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
                 spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
             )
     ) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .border(2.dp, Brush.radialGradient( // ✅ Gradient border for glow
-                    colors = listOf(
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
-                    )
-                ), RoundedCornerShape(12.dp))
+                .border(
+                    2.dp, Brush.radialGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                        )
+                    ), RoundedCornerShape(12.dp)
+                )
                 .animateContentSize(),
             shape = MaterialTheme.shapes.medium,
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             onClick = { expandedState = !expandedState }
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(12.dp)
-            ) {
-                // 🔹 Title + Expand Button
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+            Column(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
+
+                // Header row: Title and expand toggle button
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         modifier = Modifier.weight(6f),
                         text = title,
                         color = MaterialTheme.colorScheme.onSurface,
                         fontSize = MaterialTheme.typography.headlineMedium.fontSize,
                         fontWeight = FontWeight.Bold,
-                        lineHeight = MaterialTheme.typography.headlineMedium.fontSize * 1.2f, // ✅ Fix added here
+                        lineHeight = MaterialTheme.typography.headlineMedium.fontSize * 1.2f,
                         maxLines = if (expandedState) Int.MAX_VALUE else 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -122,57 +128,50 @@ fun ExpandableCard(
                         )
                     }
                 }
-                // ✅ Fix: Add spacing between Title and Description
+
                 Spacer(modifier = Modifier.height(8.dp))
 
-
-                // 🔹 Description Handling (Always Follows Proper Formatting)
+                // Body: Description block with formatting support
                 Column(
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                     modifier = Modifier.padding(top = 8.dp)
                 ) {
                     val lines = description.split("\n").filter { it.isNotBlank() }
 
-                    // ✅ Parse the text to handle Bold (`**text**`) and Bullets (`-`)
+                    // Build rich text with bold and bullet point handling
                     val formattedText = buildAnnotatedString {
                         lines.forEach { line ->
                             if (line.startsWith("-")) {
-                                // Bullet Point Formatting
                                 append("• ")
                                 val textWithoutBullet = line.removePrefix("-").trim()
                                 appendStyledText(textWithoutBullet)
                             } else {
-                                // Normal Paragraph or Bold Text Handling
                                 appendStyledText(line)
                             }
-                            append("\n") // Add a line break after each item
+                            append("\n")
                         }
                     }
 
-                    // ✅ Show formatted text (Collapses after 3 lines)
-                    if (expandedState) {
-                        Text(
-                            text = formattedText,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    } else {
-                        Text(
-                            text = formattedText,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 3,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
+                    // Show full or truncated description based on state
+                    Text(
+                        text = formattedText,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = if (expandedState) Int.MAX_VALUE else 3,
+                        overflow = if (expandedState) TextOverflow.Clip else TextOverflow.Ellipsis
+                    )
                 }
             }
         }
     }
 }
-// 🔹 Helper function to handle Bold (`**text**`) in Text
+
+/**
+ * Parses bold text enclosed in **double asterisks** and applies bold styling.
+ * Used within ExpandableCard's description formatter.
+ */
 fun AnnotatedString.Builder.appendStyledText(input: String) {
-    val regex = Regex("\\*\\*(.*?)\\*\\*") // Detects **bold text**
+    val regex = Regex("\\*\\*(.*?)\\*\\*")
     val matches = regex.findAll(input)
 
     var lastIndex = 0
@@ -180,42 +179,19 @@ fun AnnotatedString.Builder.appendStyledText(input: String) {
         val start = match.range.first
         val end = match.range.last + 1
 
-        // Append normal text before bold part
+        // Append unstyled text before match
         append(input.substring(lastIndex, start))
 
-        // Apply bold style
+        // Apply bold style to matched content
         withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
-            append(match.groupValues[1]) // Extracts text inside **bold**
+            append(match.groupValues[1])
         }
 
         lastIndex = end
     }
 
-    // Append any remaining normal text
+    // Append remaining plain text after last match
     if (lastIndex < input.length) {
         append(input.substring(lastIndex))
     }
 }
-
-
-@Preview(showBackground = true)
-@Composable
-fun ExpandableCardPreview() {
-    AnatomyInsightTheme(darkTheme = true) {
-        ExpandableCard(
-            title = "Splanchnology (Study of Viscera/Organs)",
-            description ="- **Scientific Name:** Systema splanchnicum\n" +
-                    "\n" +
-                    "Splanchnology is the study of internal organs (viscera), including:\n" +
-                    "\n" +
-                    "- **Digestive system:** Stomach, intestines, liver, pancreas.\n" +
-                    "- **Respiratory system:** Lungs, trachea.\n" +
-                    "- **Urogenital system:** Kidneys, bladder, reproductive organs.\n" +
-                    "\n" +
-                    "These systems work together to support digestion, respiration, reproduction, and excretion.\n" +
-                    "\n" +
-                    "**Source:** Gray’s Anatomy (1918 Edition) - Public Domain\n"
-        )
-    }
-}
-

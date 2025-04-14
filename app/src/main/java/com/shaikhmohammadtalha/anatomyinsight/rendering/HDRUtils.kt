@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.shaikhmohammadtalha.anatomyinsight
+package com.shaikhmohammadtalha.anatomyinsight.rendering
 
 import android.content.res.AssetManager
 import android.util.Log
@@ -40,8 +40,7 @@ fun createLights(engine: Engine, scene: Scene) {
     val lightEntity = entityManager.create()
 
     // Create a directional light
-    LightManager.Builder(LightManager.Type.DIRECTIONAL)
-        .color(1.0f, 1.0f, 1.0f) // White light
+    LightManager.Builder(LightManager.Type.DIRECTIONAL).color(1.0f, 1.0f, 1.0f) // White light
         .intensity(50_000.0f) // Adjust intensity as needed
         .direction(0.0f, -1.0f, 0.0f) // Direction pointing downwards
         .castShadows(true) // Enable shadows
@@ -60,10 +59,7 @@ fun createLights(engine: Engine, scene: Scene) {
  * @param scene The scene where the environment will be applied.
  */
 fun createEnvironment(
-    assets: AssetManager,
-    engine: Engine,
-    hdrFilePath: String,
-    scene: Scene
+    assets: AssetManager, engine: Engine, hdrFilePath: String, scene: Scene
 ) {
     try {
         // Load the HDR file as a byte buffer
@@ -95,15 +91,12 @@ fun createEnvironment(
             val reflections = specularFilter.run(skyboxTexture)
 
             // Create Indirect Light (IBL - Image-Based Lighting)
-            val ibl = IndirectLight.Builder()
-                .reflections(reflections)
+            val ibl = IndirectLight.Builder().reflections(reflections)
                 .intensity(30_000.0f) // Adjust brightness if needed
                 .build(engine)
 
             // Create a Skybox from the cubemap
-            val skybox = Skybox.Builder()
-                .environment(skyboxTexture)
-                .build(engine)
+            val skybox = Skybox.Builder().environment(skyboxTexture).build(engine)
 
             // Apply the lighting and skybox to the scene
             scene.skybox = skybox

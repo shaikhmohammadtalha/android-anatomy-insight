@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.shaikhmohammadtalha.anatomyinsight
+package com.shaikhmohammadtalha.anatomyinsight.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -54,34 +54,46 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.shaikhmohammadtalha.data.SubpartEntity
-import com.shaikhmohammadtalha.viewmodel.ModelViewModel
+import com.shaikhmohammadtalha.anatomyinsight.ui.model.AnatomyModel
+import com.shaikhmohammadtalha.anatomyinsight.data.SubpartEntity
+import com.shaikhmohammadtalha.anatomyinsight.viewmodel.ModelViewModel
 
+/**
+ * Displays a list of subparts for the selected anatomical model.
+ * Allows switching between the subpart list and a description view.
+ *
+ * @param subparts List of subparts to display
+ * @param onSubpartSelect Callback triggered when a subpart is selected
+ * @param currentModel Currently selected main model
+ * @param selectedSubpart Currently selected subpart
+ * @param showMainModels Flag indicating if the main model list is currently shown
+ * @param toggleMainModels Callback to switch between model and subpart views
+ * @param viewModel ViewModel for retrieving subpart details
+ * @param listState Scroll state to retain position across recompositions
+ */
 @Composable
 fun SubpartRows(
-    subparts: List<AnatomyModel>, // List of subparts associated with the selected model
-    onSubpartSelect: (AnatomyModel) -> Unit, // Callback when a subpart is selected
-    currentModel: AnatomyModel?, // Currently selected main model
-    selectedSubpart: AnatomyModel?, // Currently selected subpart (if any)
-    showMainModels: Boolean, // Flag to determine whether to display models or subparts
-    toggleMainModels: () -> Unit, // Callback to toggle between models and subparts
-    viewModel: ModelViewModel, // ViewModel providing subpart data
-    listState: LazyListState // Preserved scroll state for the subpart list
+    subparts: List<AnatomyModel>,
+    onSubpartSelect: (AnatomyModel) -> Unit,
+    currentModel: AnatomyModel?,
+    selectedSubpart: AnatomyModel?,
+    showMainModels: Boolean,
+    toggleMainModels: () -> Unit,
+    viewModel: ModelViewModel,
+    listState: LazyListState,
 ) {
-    // Local state to control whether the subpart description is shown
     var showDescription by remember { mutableStateOf(false) }
 
-    // Fetch details for the selected subpart asynchronously
+    // Observe the selected subpart's entity details from the database
     val subpartDetails by produceState<SubpartEntity?>(initialValue = null, selectedSubpart) {
         selectedSubpart?.let { subpart ->
             viewModel.getSubpartByName(subpart.name).collect { value = it }
         }
     }
 
-    // Separate scroll state for the description view
     val descriptionScrollState = rememberScrollState()
 
-    // Fetch details for the currently selected main model asynchronously
+    // Optionally fetch the model's SubpartEntity (some models may also have description records)
     val modelDetails by produceState<SubpartEntity?>(initialValue = null, currentModel) {
         currentModel?.let { model ->
             viewModel.getSubpartByName(model.name).collect { value = it }
@@ -90,18 +102,19 @@ fun SubpartRows(
 
     Column(modifier = Modifier.fillMaxSize()) {
 
+        // Top section: either description view or list of subparts
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .weight(0.8f)
         ) {
             if (showDescription) {
-                // Scrollable column for the description section to prevent scroll conflicts
+                // Expandable subpart description with scroll
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .verticalScroll(descriptionScrollState)
-                        .background(color = MaterialTheme.colorScheme.background)
+                        .background(MaterialTheme.colorScheme.background)
                 ) {
                     if (selectedSubpart != null && subpartDetails != null) {
                         ExpandableCard(
@@ -123,26 +136,31 @@ fun SubpartRows(
                     }
                 }
             } else {
-                // Display the subpart list with the preserved scroll state
+                // Scrollable list of subparts with highlighting for selection
                 LazyColumn(
                     state = listState,
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(color = MaterialTheme.colorScheme.background)
+                        .background(MaterialTheme.colorScheme.background)
                 ) {
                     items(subparts.drop(1)) { subpart ->
                         Surface(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 8.dp, horizontal = 8.dp)
-                                .clickable { onSubpartSelect(subpart) }
+                                .clickable {
+                                    println("Subpart selected: ${subpart.name}")
+                                    onSubpartSelect(subpart)
+                                }
                                 .border(
-                                    width = if (selectedSubpart?.name == subpart.name) 1.dp else 0.dp, // Border if selected
-                                    color = if (selectedSubpart?.name == subpart.name) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                                    width = if (selectedSubpart?.name == subpart.name) 1.dp else 0.dp,
+                                    color = if (selectedSubpart?.name == subpart.name)
+                                        MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.outline,
                                     shape = MaterialTheme.shapes.medium
                                 )
                                 .shadow(
-                                    elevation = if (selectedSubpart?.name == subpart.name) 12.dp else 4.dp, // Glow effect
+                                    elevation = if (selectedSubpart?.name == subpart.name) 12.dp else 4.dp,
                                     shape = MaterialTheme.shapes.medium
                                 ),
                             shadowElevation = 4.dp,
@@ -156,24 +174,24 @@ fun SubpartRows(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                // Button for selecting a subpart
+                                // Subpart icon trigger
                                 IconButton(onClick = { onSubpartSelect(subpart) }) {
                                     Icon(
                                         imageVector = Icons.Default.Star,
                                         contentDescription = "Subpart Icon",
-                                        tint = if (selectedSubpart?.name == subpart.name) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                                        tint = if (selectedSubpart?.name == subpart.name)
+                                            MaterialTheme.colorScheme.primary
+                                        else MaterialTheme.colorScheme.outline,
                                     )
                                 }
 
-                                // Fetch subpart entity details asynchronously
+                                // Fetch and show subpart name or fallback to raw name
                                 val subpartEntity by produceState<SubpartEntity?>(
-                                    initialValue = null,
-                                    subpart
+                                    initialValue = null, subpart
                                 ) {
                                     viewModel.getSubpartByName(subpart.name).collect { value = it }
                                 }
 
-                                // Display the scientific name if available, otherwise fallback to the subpart name
                                 Text(
                                     text = subpartEntity?.scientificName ?: subpart.name,
                                     style = MaterialTheme.typography.bodyLarge,
@@ -188,6 +206,8 @@ fun SubpartRows(
                 }
             }
         }
+
+        // Bottom controls: view switch and description toggle
         if (currentModel != null) {
             Box(
                 modifier = Modifier
@@ -195,7 +215,6 @@ fun SubpartRows(
                     .fillMaxWidth()
                     .padding(4.dp)
             ) {
-
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -204,14 +223,9 @@ fun SubpartRows(
                     Button(
                         onClick = { toggleMainModels() },
                         modifier = Modifier
-                            .weight(0.8f)
-                            .shadow(
-                                12.dp, shape = RoundedCornerShape(12.dp), // ✅ Glow Effect
-                                ambientColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
-                                spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
-                            )
+                            .weight(0.6f)
                             .border(
-                                3.dp, Brush.radialGradient( // ✅ Gradient Border
+                                3.dp, Brush.radialGradient(
                                     colors = listOf(
                                         MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
                                         MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
@@ -229,17 +243,15 @@ fun SubpartRows(
                     Spacer(modifier = Modifier.width(16.dp))
 
                     Button(
-                        onClick = { showDescription = !showDescription },
+                        onClick = {
+                            showDescription = !showDescription
+                            println("Toggled subpart description: $showDescription")
+                        },
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surface),
                         modifier = Modifier
-                            .weight(0.2f)
-                            .shadow(
-                                12.dp, shape = RoundedCornerShape(12.dp), // ✅ Glow Effect
-                                ambientColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
-                                spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
-                            )
+                            .weight(0.4f)
                             .border(
-                                3.dp, Brush.radialGradient( // ✅ Gradient Border
+                                3.dp, Brush.radialGradient(
                                     colors = listOf(
                                         MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
                                         MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
@@ -248,7 +260,7 @@ fun SubpartRows(
                             )
                     ) {
                         Text(
-                            text = if (showDescription) "M" else "D",
+                            text = if (showDescription) "Models" else "Description",
                             color = MaterialTheme.colorScheme.outline,
                             textAlign = TextAlign.Center
                         )

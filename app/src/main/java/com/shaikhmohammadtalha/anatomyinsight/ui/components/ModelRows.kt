@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.shaikhmohammadtalha.anatomyinsight
+package com.shaikhmohammadtalha.anatomyinsight.ui.components
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
@@ -56,40 +56,49 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
-import com.shaikhmohammadtalha.data.AnatomyModelEntity
-import com.shaikhmohammadtalha.viewmodel.ModelViewModel
+import com.shaikhmohammadtalha.anatomyinsight.ui.model.AnatomyModel
+import com.shaikhmohammadtalha.anatomyinsight.data.AnatomyModelEntity
+import com.shaikhmohammadtalha.anatomyinsight.viewmodel.ModelViewModel
 
+/**
+ * Displays the list of anatomical models and toggles between model list and description.
+ *
+ * @param models List of all available anatomical models
+ * @param viewModel ViewModel providing model metadata
+ * @param onModelSelect Callback triggered when a model is selected
+ * @param currentModel Currently selected model
+ * @param listState Scroll state of the LazyColumn for restoring position
+ * @param showMainModels Boolean controlling whether models or subparts are shown
+ * @param toggleMainModels Callback to toggle view between models and subparts
+ */
 @Composable
 fun ModelRows(
-    models: List<AnatomyModel>, // List of models computed in the parent composable
-    viewModel: ModelViewModel,  // ViewModel providing data
-    onModelSelect: (AnatomyModel) -> Unit, // Callback when a model is selected
-    currentModel: AnatomyModel?, // Currently selected model (if any)
-    listState: LazyListState, // Preserved scroll state for the model list
-    showMainModels: Boolean, // Flag to indicate if the main model list is displayed
-    toggleMainModels: () -> Unit // Callback to toggle between models and subparts
+    models: List<AnatomyModel>,
+    viewModel: ModelViewModel,
+    onModelSelect: (AnatomyModel) -> Unit,
+    currentModel: AnatomyModel?,
+    listState: LazyListState,
+    showMainModels: Boolean,
+    toggleMainModels: () -> Unit
 ) {
-    // Local state to control whether the model description (ExpandableCard) is shown
     var showDescription by remember { mutableStateOf(false) }
-
-    // Separate scroll state for the description view to avoid interfering with list state
     val descriptionScrollState = rememberScrollState()
 
-    // Obtain model details for the currently selected model asynchronously
+    // Collect model metadata if a model is selected
     val modelDetails by produceState<AnatomyModelEntity?>(initialValue = null, currentModel) {
         currentModel?.let { model ->
             viewModel.getModelByName(model.name).collect { value = it }
         }
     }
-    Column(modifier = Modifier.fillMaxSize()) {
 
+    Column(modifier = Modifier.fillMaxSize()) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .weight(0.8f)
         ) {
             if (showDescription && currentModel != null) {
-                // Use a scrollable Column for the description view to maintain a separate scroll state
+                // Show description view with scroll support
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -110,10 +119,9 @@ fun ModelRows(
                     }
                 }
             } else {
-                // Display the main model list using the provided LazyListState
+                // Show model grid using chunks of 3
                 LazyColumn(
-                    state = listState,
-                    modifier = Modifier.fillMaxSize()
+                    state = listState, modifier = Modifier.fillMaxSize()
                 ) {
                     items(models.chunked(3)) { chunk ->
                         Surface(
@@ -128,29 +136,33 @@ fun ModelRows(
                             ) {
                                 chunk.forEach { model ->
                                     Surface(
-                                        onClick = { onModelSelect(model) },
+                                        onClick = {
+                                            println("Model selected: ${model.name}")
+                                            onModelSelect(model)
+                                        },
                                         modifier = Modifier
                                             .weight(1f)
                                             .padding(horizontal = 8.dp)
                                             .border(
-                                                width = if (currentModel?.name == model.name) 1.dp else 0.dp, // Add border if selected
-                                                color = if (currentModel?.name == model.name) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                                                width = if (currentModel?.name == model.name) 1.dp else 0.dp,
+                                                color = if (currentModel?.name == model.name)
+                                                    MaterialTheme.colorScheme.primary
+                                                else MaterialTheme.colorScheme.outline,
                                                 shape = MaterialTheme.shapes.large
                                             )
                                             .shadow(
-                                                elevation = if (currentModel?.name == model.name) 12.dp else 8.dp, // Increase elevation for selected
+                                                elevation = if (currentModel?.name == model.name) 12.dp else 8.dp,
                                                 shape = MaterialTheme.shapes.large
                                             ),
                                         shadowElevation = 8.dp,
                                         shape = MaterialTheme.shapes.large,
                                         color = MaterialTheme.colorScheme.surface,
                                     ) {
-                                        ModelListItem(
-                                            model, currentModel,
-                                            viewModel = viewModel
-                                        )
+                                        ModelListItem(model, currentModel, viewModel)
                                     }
                                 }
+
+                                // Spacer if row has fewer than 3 items
                                 if (chunk.size < 2) {
                                     Spacer(modifier = Modifier.weight(1f))
                                 }
@@ -160,6 +172,8 @@ fun ModelRows(
                 }
             }
         }
+
+        // Bottom controls: toggle model/subpart view and toggle description
         if (currentModel != null) {
             Box(
                 modifier = Modifier
@@ -175,14 +189,9 @@ fun ModelRows(
                     Button(
                         onClick = { toggleMainModels() },
                         modifier = Modifier
-                            .weight(0.8f)
-                            .shadow(
-                                12.dp, shape = RoundedCornerShape(12.dp), // ✅ Glow Effect
-                                ambientColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
-                                spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
-                            )
+                            .weight(0.6f)
                             .border(
-                                3.dp, Brush.radialGradient( // ✅ Gradient Border
+                                3.dp, Brush.radialGradient(
                                     colors = listOf(
                                         MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
                                         MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
@@ -200,17 +209,15 @@ fun ModelRows(
                     Spacer(modifier = Modifier.width(16.dp))
 
                     Button(
-                        onClick = { showDescription = !showDescription },
+                        onClick = {
+                            showDescription = !showDescription
+                            println("Toggled model description: $showDescription")
+                        },
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surface),
                         modifier = Modifier
-                            .weight(0.2f)
-                            .shadow(
-                                12.dp, shape = RoundedCornerShape(12.dp), // ✅ Glow Effect
-                                ambientColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
-                                spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
-                            )
+                            .weight(0.4f)
                             .border(
-                                3.dp, Brush.radialGradient( // ✅ Gradient Border
+                                3.dp, Brush.radialGradient(
                                     colors = listOf(
                                         MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
                                         MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
@@ -219,7 +226,7 @@ fun ModelRows(
                             )
                     ) {
                         Text(
-                            text = if (showDescription) "M" else "D",
+                            text = if (showDescription) "Models" else "Description",
                             color = MaterialTheme.colorScheme.outline,
                             textAlign = TextAlign.Center
                         )
@@ -230,11 +237,19 @@ fun ModelRows(
     }
 }
 
+/**
+ * Displays an individual model item with image and label.
+ *
+ * @param model The model to display
+ * @param currentModel Currently selected model for styling purposes
+ * @param viewModel Used to fetch metadata for the displayed model
+ */
 @Composable
 fun ModelListItem(model: AnatomyModel, currentModel: AnatomyModel?, viewModel: ModelViewModel) {
     val modelDetails by produceState<AnatomyModelEntity?>(initialValue = null, model) {
         viewModel.getModelByName(model.name).collect { value = it }
     }
+
     Column(
         verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = Modifier
@@ -242,10 +257,9 @@ fun ModelListItem(model: AnatomyModel, currentModel: AnatomyModel?, viewModel: M
             .padding(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Construct the image path from the model name
+        // Display model image from assets
         val imagePath = "file:///android_asset/image/${model.name.replace(" ", "").lowercase()}.png"
 
-        // Display the model image with consistent size and rounded corners
         Box(
             modifier = Modifier
                 .size(100.dp)
@@ -261,18 +275,18 @@ fun ModelListItem(model: AnatomyModel, currentModel: AnatomyModel?, viewModel: M
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Display the model name and a prompt to tap
+        // Display scientific name or fallback name
         Column(
             modifier = Modifier.padding(horizontal = 4.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             modelDetails?.scientificName?.let { scientificName ->
-                val cleanedName =
-                    scientificName.substringBefore("(").trim() // ✅ Remove content after "("
+                val cleanedName = scientificName.substringBefore("(").trim()
 
                 Text(
-                    text = cleanedName, // ✅ Display only the cleaned name
-                    color = if (currentModel?.name == model.name) MaterialTheme.colorScheme.primary // ✅ RichRed for selected model
+                    text = cleanedName,
+                    color = if (currentModel?.name == model.name)
+                        MaterialTheme.colorScheme.primary
                     else MaterialTheme.colorScheme.outline,
                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
                     maxLines = 2,
@@ -283,8 +297,7 @@ fun ModelListItem(model: AnatomyModel, currentModel: AnatomyModel?, viewModel: M
             if (currentModel?.name != model.name) {
                 Text(
                     text = "Tap to view",
-                    Modifier
-                        .padding(top = 4.dp),
+                    Modifier.padding(top = 4.dp),
                     color = MaterialTheme.colorScheme.outline,
                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 14.sp),
                     maxLines = 1,

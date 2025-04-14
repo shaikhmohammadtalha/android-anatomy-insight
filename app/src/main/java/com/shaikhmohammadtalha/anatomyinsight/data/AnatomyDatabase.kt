@@ -13,22 +13,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.shaikhmohammadtalha.data
+package com.shaikhmohammadtalha.anatomyinsight.data
 
 import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [AnatomyModelEntity::class, SubpartEntity::class], version = 6, exportSchema = false)
+/**
+ * Room database definition for anatomy-related entities.
+ * Includes model and subpart tables and provides DAOs for data access.
+ */
+@Database(
+    entities = [AnatomyModelEntity::class, SubpartEntity::class],
+    version = 6,
+    exportSchema = false
+)
 abstract class AnatomyDatabase : RoomDatabase() {
+
+    // Data Access Object for anatomy models
     abstract fun modelDao(): ModelDao
+
+    // Data Access Object for model subparts
     abstract fun subpartDao(): SubpartDao
 
     companion object {
         @Volatile
         private var INSTANCE: AnatomyDatabase? = null
 
+        /**
+         * Provides a singleton instance of the [AnatomyDatabase].
+         * Uses a pre-packaged asset and handles migrations destructively if needed.
+         *
+         * @param context Application context for database creation.
+         * @return The initialized Room database instance.
+         */
         fun getDatabase(context: Context): AnatomyDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -36,8 +55,8 @@ abstract class AnatomyDatabase : RoomDatabase() {
                     AnatomyDatabase::class.java,
                     "anatomy_database_fixed.db"
                 )
-                    .fallbackToDestructiveMigration() // ✅ Deletes old DB if schema mismatches
-                    .createFromAsset("anatomy_database_fixed.db") // ✅ Loads pre-packaged database directly
+                    .fallbackToDestructiveMigration() // Resets DB if schema changes (non-migrated)
+                    .createFromAsset("anatomy_database_fixed.db") // Uses a pre-built database from assets
                     .build()
 
                 INSTANCE = instance

@@ -15,7 +15,7 @@ android {
         minSdk = 27 // Minimum supported Android version
         targetSdk = 36 // Target Android version
         versionCode = 1 // Internal app version
-        versionName = "1.1" // User-visible app version
+        versionName = "1.2" // User-visible app version
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner" // Test runner
     }
@@ -61,50 +61,64 @@ android {
 }
 
 dependencies {
-    // ✅ Room Database (for local storage)
+    // --- Architecture Components ---
+
+    // Room (Local Database)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
-    implementation(libs.androidx.navigation.compose)
     ksp(libs.androidx.room.compiler)
 
-    // ✅ ViewModel & Lifecycle
+    // Lifecycle & ViewModel
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.runtime.ktx)
 
-    // ✅ Core Android Dependencies
+    // Navigation
+    implementation(libs.androidx.navigation.compose)
+
+    // DataStore (Preferences)
+    implementation(libs.androidx.datastore.preferences)
+
+    // --- Core Libraries ---
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
 
-    // ✅ Jetpack Compose BOM (Manages Compose dependencies)
+    // --- Jetpack Compose ---
+
+    // Compose BOM (manages Compose library versions)
     implementation(platform(libs.androidx.compose.bom))
+
+    // Core Compose Libraries
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
+    implementation(libs.androidx.foundation)
 
-    // ✅ Material Design
+    // Material Design
     implementation(libs.androidx.material3)
     implementation(libs.material3)
     implementation(libs.material)
 
-    // ✅ Coil (Image loading for Compose)
-    implementation(libs.coil.compose)
+    // --- Image Loading ---
 
-    // ✅ AndroidX Foundation (Compose utilities)
-    implementation(libs.androidx.foundation)
+    implementation(libs.coil.compose) // Coil for Compose
 
-    // ✅ Filament (3D rendering)
+    // --- 3D Rendering with Filament ---
+
     implementation(libs.filament.android)
     implementation(libs.filament.utils.android)
     implementation(libs.gltfio.android)
 
-    // ✅ Testing Dependencies
-    testImplementation(libs.junit) // Unit testing
-    androidTestImplementation(libs.androidx.junit) // Android JUnit tests
-    androidTestImplementation(libs.androidx.espresso.core) // UI testing
-    androidTestImplementation(platform(libs.androidx.compose.bom)) // Compose testing
-    androidTestImplementation(libs.androidx.ui.test.junit4) // UI test framework
+    // --- Testing ---
 
-    // ✅ Debugging Tools
-    debugImplementation(libs.androidx.ui.tooling) // UI tool preview
-    debugImplementation(libs.androidx.ui.test.manifest) // Test manifest for debugging
+    testImplementation(libs.junit) // Unit tests
+    androidTestImplementation(libs.androidx.junit) // Android JUnit tests
+    androidTestImplementation(libs.androidx.espresso.core) // Espresso UI testing
+    androidTestImplementation(platform(libs.androidx.compose.bom)) // Compose BOM for tests
+    androidTestImplementation(libs.androidx.ui.test.junit4) // Compose UI test framework
+
+    // --- Debugging Tools ---
+
+    debugImplementation(libs.androidx.ui.tooling) // UI preview tools
+    debugImplementation(libs.androidx.ui.test.manifest) // Compose test manifest
 }

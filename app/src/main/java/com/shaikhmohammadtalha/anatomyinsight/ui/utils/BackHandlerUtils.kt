@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.shaikhmohammadtalha.anatomyinsight.ui
+package com.shaikhmohammadtalha.anatomyinsight.ui.utils
 
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -26,6 +26,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 
+/**
+ * A composable that intercepts the back press to implement a "double tap to exit" behavior.
+ *
+ * @param navController The navigation controller used to determine the current route.
+ * @param exitThresholdMs Time window (in milliseconds) within which two back presses will exit the app.
+ */
 @Composable
 fun DoubleBackToExitHandler(
     navController: NavHostController,
@@ -40,13 +46,16 @@ fun DoubleBackToExitHandler(
         val now = System.currentTimeMillis()
 
         if (currentRoute == "main") {
+            // If back is pressed twice within the threshold, exit the app
             if (now - backPressedTime < exitThresholdMs) {
                 activity?.finish()
             } else {
+                // First back press: show a warning toast
                 backPressedTime = now
                 Toast.makeText(context, "Press back again to exit", Toast.LENGTH_SHORT).show()
             }
         } else {
+            // For other screens, simply pop the navigation stack
             navController.popBackStack()
         }
     }

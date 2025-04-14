@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.shaikhmohammadtalha.anatomyinsight.ui
+package com.shaikhmohammadtalha.anatomyinsight.ui.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -34,13 +34,19 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.compose.runtime.getValue
 
-
+/**
+ * Bottom navigation bar used throughout the app.
+ * Provides quick access to the Home, Search, and Settings screens.
+ *
+ * @param navController Controller for navigating between composable destinations
+ * @param onSearchClick Lambda invoked when the Search item is selected
+ */
 @Composable
 fun BottomNavBar(
     navController: NavController,
     onSearchClick: () -> Unit
 ) {
-
+    // Get the current destination from the navigation stack
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination?.route
 
@@ -49,10 +55,10 @@ fun BottomNavBar(
             .navigationBarsPadding()
             .fillMaxWidth()
             .height(64.dp),
-        containerColor = MaterialTheme.colorScheme.surface,
+        containerColor = MaterialTheme.colorScheme.background,
         tonalElevation = 8.dp
     ) {
-
+        // Home navigation item
         NavigationBarItem(
             selected = currentDestination == "main",
             onClick = {
@@ -62,17 +68,17 @@ fun BottomNavBar(
                             inclusive = false
                         }
                         launchSingleTop = true
-                        restoreState = false // <- try false first; true only if you're using state restoration
+                        restoreState = false // Consider true only if state restoration is enabled
                     }
                 }
-            }
-            ,
+            },
             icon = {
                 Icon(Icons.Default.Home, contentDescription = "Home")
             },
             label = { Text("Home") }
         )
 
+        // Search navigation item
         NavigationBarItem(
             selected = currentDestination == "search",
             onClick = {
@@ -86,6 +92,7 @@ fun BottomNavBar(
             label = { Text("Search") }
         )
 
+        // Settings navigation item
         NavigationBarItem(
             selected = currentDestination == "settings",
             onClick = {
@@ -98,6 +105,5 @@ fun BottomNavBar(
             },
             label = { Text("Settings") }
         )
-
     }
 }

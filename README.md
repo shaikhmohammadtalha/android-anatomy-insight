@@ -1,6 +1,5 @@
 # 🏥 Anatomy Insight  
 
-[![Under Development](https://img.shields.io/badge/Status-Under%20Development-yellow)](https://github.com/shaikhmohammadtalha/android-anatomy-insight)
 [![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-%230A8FDC.svg?style=flat&logo=android&logoColor=white)](https://developer.android.com/jetpack/compose)
 [![Kotlin](https://img.shields.io/badge/Kotlin-%230095D5.svg?style=flat&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
 [![Filament](https://img.shields.io/badge/3D%20Rendering-Google%20Filament-brightgreen)](https://google.github.io/filament/)
@@ -17,15 +16,15 @@
 
 <img src="https://github.com/shaikhmohammadtalha/android-anatomy-insight/blob/main/metadata/images/phoneScreenshots/02.png" width="250">
 
+<img src="https://github.com/shaikhmohammadtalha/android-anatomy-insight/blob/main/metadata/images/phoneScreenshots/03.png" width="250">
   
 </p>
 
 <p align="center">
 
-<img src="https://github.com/shaikhmohammadtalha/android-anatomy-insight/blob/main/metadata/images/phoneScreenshots/03.png" width="250">
-
 <img src="https://github.com/shaikhmohammadtalha/android-anatomy-insight/blob/main/metadata/images/phoneScreenshots/04.png" width="250">
 
+<img src="https://github.com/shaikhmohammadtalha/android-anatomy-insight/blob/main/metadata/images/phoneScreenshots/05.png" width="250">
   
 </p>
 
@@ -33,15 +32,10 @@
 
 ## 📖 About  
 
-**Anatomy Insight** is a Jetpack Compose-powered Android application designed for **interactive anatomical exploration**.  
-It enables users to **visualize human body structures in 3D**, with **detailed descriptions** of each anatomical part.  
-Built using **Google Filament** for high-performance rendering, the app offers an immersive learning experience.  
-
----
-## 🚧 **Project Status: Under Development**  
-🔹 This project is actively being developed. Some features may not be fully implemented yet.  
-🔹 Expect **frequent updates**, **bug fixes**, and **new features** in future releases.  
-🔹 Contributions & feedback are welcome!  
+**Anatomy Insight** is a modern Android application built with **Jetpack Compose** for **interactive 3D anatomical exploration**.  
+It features **6 primary anatomical models** with over **2,300 detailed subparts**, each rendered in real-time using **Google Filament**.  
+Powered by a **Room (SQLite) database**, the app efficiently stores and retrieves anatomical data, ensuring a smooth and responsive user experience.  
+Designed for performance and clarity, Anatomy Insight offers an immersive way to explore human anatomy right from your device.
 
 ---
 
@@ -52,7 +46,6 @@ Built using **Google Filament** for high-performance rendering, the app offers a
 ✅ **Filament 3D Engine** – High-performance rendering for real-time visualization  
 ✅ **Educational Descriptions** – Includes details for each anatomical part  
 ✅ **Optimized Performance** – Smooth rendering of 3D objects  
-
 
 ---
 
@@ -68,7 +61,7 @@ Built using **Google Filament** for high-performance rendering, the app offers a
 🔹 **Minimum SDK:** Android 8.0 (API 27)  
 🔹 **Target SDK:** Android 16 (API 36) 
 🔹 **Architecture:** Universal  
-🔹 **Storage:** ~350MB free space recommended  
+🔹 **Storage:** ~300MB free space recommended  
 
 ---
 
@@ -128,7 +121,6 @@ This project is licensed under the **Apache License 2.0**. See the [LICENSE](LIC
 📧 **Email:** shaikhmot@gmail.com  
 🌐 **GitHub:** [**Shaikh Mohammad Talha**](https://github.com/shaikhmohammadtalha)
 
-
 ---
 
-### 🎉 **Happy Coding! 🚀**
+### 🎉 Happy exploring – and feel free to contribute or reach out! 🚀

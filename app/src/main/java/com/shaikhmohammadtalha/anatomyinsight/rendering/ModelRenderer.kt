@@ -1,21 +1,7 @@
-/*
- * Copyright 2025 Shaikh Mohammad Talha
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-package com.shaikhmohammadtalha.anatomyinsight
+package com.shaikhmohammadtalha.anatomyinsight.rendering
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.res.AssetManager
 import android.util.Log
 import android.view.Choreographer
@@ -27,6 +13,12 @@ import androidx.lifecycle.LifecycleOwner
 import com.google.android.filament.View
 import com.google.android.filament.android.UiHelper
 import com.google.android.filament.utils.ModelViewer
+import com.shaikhmohammadtalha.anatomyinsight.datastore.GraphicsSettingsStore
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -37,23 +29,25 @@ import java.nio.ByteOrder
  */
 class ModelRenderer {
 
-    // Components for rendering
+    // Core rendering and lifecycle components
     private lateinit var surfaceView: SurfaceView
     private lateinit var lifecycle: Lifecycle
     private lateinit var choreographer: Choreographer
     private lateinit var uiHelper: UiHelper
     private lateinit var modelViewer: ModelViewer
+
+    // Internal state flags
     private var surfaceInitialized = false
     private var pendingModelPath: String? = null
 
-    // Provides access to assets for model loading
+    // Access to asset manager for reading model and environment files
     private val assets: AssetManager
         get() = surfaceView.context.assets
 
-    // Handles frame rendering
+    // Handles frame callbacks to trigger continuous rendering
     private val frameScheduler = FrameCallback()
 
-    // Observes lifecycle events to manage rendering
+    // Observes lifecycle to pause/resume rendering appropriately
     private val lifecycleObserver = object : DefaultLifecycleObserver {
         override fun onResume(owner: LifecycleOwner) {
             choreographer.postFrameCallback(frameScheduler)
@@ -71,7 +65,7 @@ class ModelRenderer {
 
     /**
      * Loads a 3D model from assets and renders it.
-     *
+     * If the surface is not ready, defers loading until it becomes available.
      * @param filePath The path to the model file (GLB format).
      */
     fun loadModel(filePath: String) {
@@ -118,7 +112,7 @@ class ModelRenderer {
      * @param lifecycle The lifecycle of the associated activity/fragment.
      */
     @SuppressLint("ClickableViewAccessibility")
-    fun onSurfaceAvailable(surfaceView: SurfaceView, lifecycle: Lifecycle) {
+    fun onSurfaceAvailable(surfaceView: SurfaceView, lifecycle: Lifecycle, context: Context) {
         println("SurfaceView is available")
         this.surfaceView = surfaceView
         this.lifecycle = lifecycle
@@ -126,12 +120,12 @@ class ModelRenderer {
         choreographer = Choreographer.getInstance()
         lifecycle.addObserver(lifecycleObserver)
 
-        // Initialize UI helper for rendering
+        // Prepare UI helper for setting up the rendering surface
         uiHelper = UiHelper(UiHelper.ContextErrorPolicy.DONT_CHECK).apply {
             isOpaque = false
         }
 
-        // Initialize ModelViewer
+        // Initialize the model viewer with rendering surface and UI handling
         modelViewer = ModelViewer(surfaceView = surfaceView, uiHelper = uiHelper)
         surfaceInitialized = true
         println("Renderer initialized successfully!")
@@ -146,18 +140,36 @@ class ModelRenderer {
             true
         }
 
-        // Configure rendering quality settings
-        modelViewer.view.apply {
-            renderQuality = renderQuality.apply { hdrColorBuffer = View.QualityLevel.LOW }
-            multiSampleAntiAliasingOptions = multiSampleAntiAliasingOptions.apply { enabled = true }
-            ambientOcclusionOptions = ambientOcclusionOptions.apply { enabled = true }
-            bloomOptions = bloomOptions.apply { enabled = true }
+        // Apply rendering quality settings based on user preferences
+        CoroutineScope(Dispatchers.IO).launch {
+            GraphicsSettingsStore.settingsFlow(context).first().let { settings ->
+                val qualityLevel = when (settings.quality) {
+                    "Low" -> View.QualityLevel.LOW
+                    "Medium" -> View.QualityLevel.MEDIUM
+                    "High" -> View.QualityLevel.HIGH
+                    "Ultra" -> View.QualityLevel.ULTRA
+                    else -> View.QualityLevel.MEDIUM
+                }
+
+                withContext(Dispatchers.Main) {
+                    modelViewer.view.apply {
+                        renderQuality = renderQuality.apply { hdrColorBuffer = qualityLevel }
+                        multiSampleAntiAliasingOptions =
+                            multiSampleAntiAliasingOptions.apply { enabled = settings.msaa }
+                        ambientOcclusionOptions =
+                            ambientOcclusionOptions.apply { enabled = settings.ao }
+                        bloomOptions = bloomOptions.apply { enabled = settings.bloom }
+                    }
+                }
+            }
         }
 
         modelViewer.scene.skybox = null
 
         // Load the HDR environment for lighting
-        createEnvironment(assets, modelViewer.engine, "environments/lightroom_14b.hdr", modelViewer.scene)
+        createEnvironment(
+            assets, modelViewer.engine, "environments/lightroom_14b.hdr", modelViewer.scene
+        )
 
         // Remove skybox, keeping only HDR lighting
         // Remove below line to render the HDR environment
