@@ -70,12 +70,6 @@ fun SettingsScreen(
                 .padding(padding)
                 .padding(16.dp)
         ) {
-            Text(
-                text = "Settings",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-
             // Dynamically build each setting item
             settingsOptions.forEach { option ->
                 SettingCard(option = option) {
