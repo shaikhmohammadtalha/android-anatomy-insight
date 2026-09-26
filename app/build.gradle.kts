@@ -1,21 +1,20 @@
 // Apply necessary plugins for the Android project
 plugins {
-    alias(libs.plugins.android.application) // Android application plugin
-    alias(libs.plugins.kotlin.android) // Kotlin support
+    alias(libs.plugins.android.application) // Android application plugin (built-in Kotlin in AGP 9)
     alias(libs.plugins.kotlin.compose) // Jetpack Compose support
     alias(libs.plugins.ksp) // Kotlin Symbol Processing (for Room, etc.)
 }
 
 android {
     namespace = "com.shaikhmohammadtalha.anatomyinsight" // Application package name
-    compileSdk = 35 // Compile SDK version
+    compileSdk = 37 // Compile SDK version
 
     defaultConfig {
         applicationId = "com.shaikhmohammadtalha.anatomyinsight" // Unique app identifier
         minSdk = 27 // Minimum supported Android version
-        targetSdk = 36 // Target Android version
-        versionCode = 1 // Internal app version
-        versionName = "1.2" // User-visible app version
+        targetSdk = 37 // Target Android version
+        versionCode = 2 // Internal app version
+        versionName = "2.0" // User-visible app version
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner" // Test runner
     }
@@ -32,31 +31,12 @@ android {
 
     // Set Java compatibility
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
-
-    kotlinOptions {
-        jvmTarget = "11" // Set JVM target version
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     buildFeatures {
         compose = true // Enable Jetpack Compose
-    }
-
-    // Packaging options
-    packaging {
-        jniLibs {
-            useLegacyPackaging = false // Use new packaging system
-        }
-    }
-
-    // APK splitting options (disabled for now)
-    splits {
-        abi {
-            isEnable = false // Disable ABI-based APK splitting
-            isUniversalApk = true // Generate a universal APK
-        }
     }
 }
 
@@ -94,10 +74,11 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.foundation)
 
-    // Material Design
+    // Material Design & Icons
     implementation(libs.androidx.material3)
-    implementation(libs.material3)
     implementation(libs.material)
+    implementation(libs.androidx.materialIconsCore)
+    implementation(libs.androidx.materialIconsExtended)
 
     // --- Image Loading ---
 

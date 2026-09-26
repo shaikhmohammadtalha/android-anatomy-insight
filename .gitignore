@@ -15,6 +15,7 @@ build/
 # Ignore IDE settings
 .idea/
 .kotlinc/
+.kotlin/
 
 # Ignore local properties
 local.properties

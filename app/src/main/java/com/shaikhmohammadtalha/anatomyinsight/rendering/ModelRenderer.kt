@@ -1,10 +1,24 @@
+/*
+ * Copyright 2025 Shaikh Mohammad Talha
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.shaikhmohammadtalha.anatomyinsight.rendering
 
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.AssetManager
 import android.util.Log
-import android.view.Choreographer
 import android.view.MotionEvent
 import android.view.SurfaceView
 import androidx.lifecycle.DefaultLifecycleObserver
@@ -23,34 +37,38 @@ import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
+private const val TAG = "ModelRenderer"
+
 /**
- * Manages the rendering of 3D models using Filament's `ModelViewer`.
- * Handles surface initialization, lifecycle management, model loading, and rendering.
+ * Manages the rendering of 3D models using Filament's [ModelViewer].
+ * Handles surface initialisation, lifecycle management, model loading, and frame rendering.
  */
 class ModelRenderer {
 
-    // Core rendering and lifecycle components
     private lateinit var surfaceView: SurfaceView
     private lateinit var lifecycle: Lifecycle
-    private lateinit var choreographer: Choreographer
+    private lateinit var choreographer: android.view.Choreographer
     private lateinit var uiHelper: UiHelper
     private lateinit var modelViewer: ModelViewer
 
-    // Internal state flags
+    @Volatile
     private var surfaceInitialized = false
+    @Volatile
+    private var isModelLoaded = false
     private var pendingModelPath: String? = null
+    var currentModelPath: String? = null
+        private set
 
-    // Access to asset manager for reading model and environment files
     private val assets: AssetManager
         get() = surfaceView.context.assets
 
-    // Handles frame callbacks to trigger continuous rendering
     private val frameScheduler = FrameCallback()
 
-    // Observes lifecycle to pause/resume rendering appropriately
     private val lifecycleObserver = object : DefaultLifecycleObserver {
         override fun onResume(owner: LifecycleOwner) {
-            choreographer.postFrameCallback(frameScheduler)
+            if (surfaceInitialized) {
+                choreographer.postFrameCallback(frameScheduler)
+            }
         }
 
         override fun onPause(owner: LifecycleOwner) {
@@ -58,27 +76,40 @@ class ModelRenderer {
         }
 
         override fun onDestroy(owner: LifecycleOwner) {
-            choreographer.removeFrameCallback(frameScheduler)
-            lifecycle.removeObserver(this)
+            destroy()
         }
     }
 
     /**
-     * Loads a 3D model from assets and renders it.
-     * If the surface is not ready, defers loading until it becomes available.
-     * @param filePath The path to the model file (GLB format).
+     * Cleans up the renderer, stopping Choreographer callbacks and detaching lifecycle observers.
+     */
+    fun destroy() {
+        if (this::choreographer.isInitialized) {
+            choreographer.removeFrameCallback(frameScheduler)
+        }
+        if (this::lifecycle.isInitialized) {
+            lifecycle.removeObserver(lifecycleObserver)
+        }
+        surfaceInitialized = false
+        isModelLoaded = false
+    }
+
+    /**
+     * Loads a 3D GLB model from the app's assets.
+     * If the rendering surface is not yet ready, the load is deferred until it becomes available.
+     *
+     * @param filePath The asset-relative path to the GLB file (e.g. "models/Myology/Biceps.glb")
      */
     fun loadModel(filePath: String) {
+        currentModelPath = filePath
         if (!surfaceInitialized) {
-            println("Surface not initialized. Pending model: $filePath")
             pendingModelPath = filePath
             return
         }
 
-        println("Loading model from: $filePath") // Debug log
+        Log.d(TAG, "Loading model: $filePath")
 
         try {
-            // Read model file into a ByteBuffer
             assets.open(filePath).use { input ->
                 ByteArrayOutputStream().use { output ->
                     val buffer = ByteArray(1024)
@@ -92,65 +123,71 @@ class ModelRenderer {
                         put(bytes)
                         rewind()
                     }
-
-                    // Load model into ModelViewer
                     modelViewer.loadModelGlb(byteBuffer)
                     modelViewer.transformToUnitCube()
-                    println("Model loaded successfully: $filePath")
+                    isModelLoaded = true
+                    Log.d(TAG, "Model loaded successfully: $filePath")
                 }
             }
         } catch (e: Exception) {
-            println("Error loading model: ${e.message}")
-            e.printStackTrace()
+            Log.e(TAG, "Error loading model: ${e.message}", e)
         }
     }
 
     /**
-     * Initializes rendering when the SurfaceView becomes available.
+     * Initialises the Filament renderer when the [SurfaceView] becomes available.
+     * Sets up the model viewer, lifecycle observer, touch handling, and graphics settings.
      *
-     * @param surfaceView The `SurfaceView` used for rendering.
-     * @param lifecycle The lifecycle of the associated activity/fragment.
+     * @param surfaceView The [SurfaceView] used for rendering
+     * @param lifecycle The lifecycle of the associated activity
+     * @param context Android context for asset and DataStore access
      */
     @SuppressLint("ClickableViewAccessibility")
     fun onSurfaceAvailable(surfaceView: SurfaceView, lifecycle: Lifecycle, context: Context) {
-        println("SurfaceView is available")
+        if (surfaceInitialized && this@ModelRenderer::surfaceView.isInitialized && this.surfaceView == surfaceView) {
+            return
+        }
+
+        // Clean up previous registration if re-initialising
+        if (this::choreographer.isInitialized) {
+            choreographer.removeFrameCallback(frameScheduler)
+        }
+        if (this::lifecycle.isInitialized) {
+            this.lifecycle.removeObserver(lifecycleObserver)
+        }
+
         this.surfaceView = surfaceView
         this.lifecycle = lifecycle
 
-        choreographer = Choreographer.getInstance()
+        choreographer = android.view.Choreographer.getInstance()
         lifecycle.addObserver(lifecycleObserver)
 
-        // Prepare UI helper for setting up the rendering surface
         uiHelper = UiHelper(UiHelper.ContextErrorPolicy.DONT_CHECK).apply {
             isOpaque = false
         }
 
-        // Initialize the model viewer with rendering surface and UI handling
         modelViewer = ModelViewer(surfaceView = surfaceView, uiHelper = uiHelper)
         surfaceInitialized = true
-        println("Renderer initialized successfully!")
 
-        // Handle touch events for model interaction
         surfaceView.setOnTouchListener { _, event ->
             when (event.action) {
-                MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE, MotionEvent.ACTION_UP -> {
-                    modelViewer.onTouchEvent(event)
-                }
+                MotionEvent.ACTION_DOWN,
+                MotionEvent.ACTION_MOVE,
+                MotionEvent.ACTION_UP -> modelViewer.onTouchEvent(event)
             }
             true
         }
 
-        // Apply rendering quality settings based on user preferences
+        // Apply stored graphics settings
         CoroutineScope(Dispatchers.IO).launch {
             GraphicsSettingsStore.settingsFlow(context).first().let { settings ->
                 val qualityLevel = when (settings.quality) {
-                    "Low" -> View.QualityLevel.LOW
-                    "Medium" -> View.QualityLevel.MEDIUM
-                    "High" -> View.QualityLevel.HIGH
-                    "Ultra" -> View.QualityLevel.ULTRA
-                    else -> View.QualityLevel.MEDIUM
+                    "LOW" -> View.QualityLevel.LOW
+                    "MEDIUM" -> View.QualityLevel.MEDIUM
+                    "HIGH" -> View.QualityLevel.HIGH
+                    "ULTRA" -> View.QualityLevel.ULTRA
+                    else -> View.QualityLevel.LOW
                 }
-
                 withContext(Dispatchers.Main) {
                     modelViewer.view.apply {
                         renderQuality = renderQuality.apply { hdrColorBuffer = qualityLevel }
@@ -164,51 +201,45 @@ class ModelRenderer {
             }
         }
 
+        // Transparent background (no skybox)
         modelViewer.scene.skybox = null
 
-        // Load the HDR environment for lighting
+        // HDR lighting
         createEnvironment(
             assets, modelViewer.engine, "environments/lightroom_14b.hdr", modelViewer.scene
         )
-
-        // Remove skybox, keeping only HDR lighting
-        // Remove below line to render the HDR environment
         modelViewer.scene.skybox = null
 
-        // Add additional lighting sources
         createLights(modelViewer.engine, modelViewer.scene)
 
-        // Set blending mode for transparency
         modelViewer.view.blendMode = View.BlendMode.TRANSLUCENT
-
-        // Ensure the renderer clears the screen before each frame
         modelViewer.renderer.clearOptions = modelViewer.renderer.clearOptions.apply {
             clear = true
         }
 
-        // Load pending model if any
-        pendingModelPath?.let {
-            println("Loading pending model: $it")
+        // Load any model that was requested before the surface was ready, or restore current model
+        val modelToLoad = pendingModelPath ?: currentModelPath
+        modelToLoad?.let {
             loadModel(it)
             pendingModelPath = null
         }
 
-        // Force an initial frame render
-        surfaceView.post {
-            println("Forcing a frame render")
-            choreographer.postFrameCallback(frameScheduler)
-        }
-
-        Log.d("ModelRenderer", "Renderer initialized successfully.")
+        surfaceView.post { choreographer.postFrameCallback(frameScheduler) }
+        Log.d(TAG, "Renderer initialised successfully.")
     }
 
-    /**
-     * Handles frame rendering at regular intervals.
-     */
-    private inner class FrameCallback : Choreographer.FrameCallback {
+    private inner class FrameCallback : android.view.Choreographer.FrameCallback {
         override fun doFrame(frameTimeNanos: Long) {
-            modelViewer.render(frameTimeNanos)
-            choreographer.postFrameCallback(this)
+            if (surfaceInitialized && isModelLoaded && this@ModelRenderer::surfaceView.isInitialized && surfaceView.width > 0 && surfaceView.height > 0 && this@ModelRenderer::uiHelper.isInitialized && uiHelper.isReadyToRender) {
+                try {
+                    modelViewer.render(frameTimeNanos)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Render frame error: ${e.message}", e)
+                }
+            }
+            if (surfaceInitialized && this@ModelRenderer::choreographer.isInitialized) {
+                choreographer.postFrameCallback(this)
+            }
         }
     }
 }

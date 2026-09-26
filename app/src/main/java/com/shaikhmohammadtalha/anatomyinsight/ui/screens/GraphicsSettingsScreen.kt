@@ -15,33 +15,43 @@
  */
 package com.shaikhmohammadtalha.anatomyinsight.ui.screens
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -49,228 +59,213 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
-import com.shaikhmohammadtalha.anatomyinsight.datastore.AppTheme
 import com.shaikhmohammadtalha.anatomyinsight.datastore.GraphicsSettings
 import com.shaikhmohammadtalha.anatomyinsight.datastore.GraphicsSettingsStore
-import com.shaikhmohammadtalha.anatomyinsight.ui.theme.AnatomyInsightTheme
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 /**
- * Composable screen for configuring graphics settings including quality presets and rendering effects.
- * Stores user preferences using a local data store and updates them on selection.
+ * Graphics settings screen with segmented quality selector, effect toggles, and search limit slider.
+ * Single Scaffold with one TopAppBar and Apply button pinned to the bottom.
  *
  * @param navController Used for back navigation
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GraphicsSettingsScreen(navController: NavController) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    // New local state for user-defined search result limit
-    var searchResultLimit by remember { mutableStateOf("20") }
-
-    // Observe stored settings from the persistent data store
     val settings by GraphicsSettingsStore.settingsFlow(context)
-        .collectAsState(initial = GraphicsSettings("Medium", true, true, true, 20))
+        .collectAsState(initial = GraphicsSettings("LOW", true, true, true, 20))
 
-    // Local state to track UI selections
-    var selectedQuality by remember { mutableStateOf(settings.quality) }
-    var msaaEnabled by remember { mutableStateOf(settings.msaa) }
-    var aoEnabled by remember { mutableStateOf(settings.ao) }
-    var bloomEnabled by remember { mutableStateOf(settings.bloom) }
+    var selectedQuality by remember { mutableStateOf("LOW") }
+    var msaaEnabled by remember { mutableStateOf(true) }
+    var aoEnabled by remember { mutableStateOf(true) }
+    var bloomEnabled by remember { mutableStateOf(true) }
+    var searchLimit by remember { mutableFloatStateOf(20f) }
 
-    val qualities = listOf("LOW", "MEDIUM", "HIGH", "ULTRA")
-
-    // Keep state synced with persisted store
+    // Sync local state from persisted settings once
     LaunchedEffect(Unit) {
-        GraphicsSettingsStore.settingsFlow(context).collect { settings ->
-            selectedQuality = settings.quality
-            msaaEnabled = settings.msaa
-            aoEnabled = settings.ao
-            bloomEnabled = settings.bloom
-            searchResultLimit = settings.searchLimit.toString()
+        GraphicsSettingsStore.settingsFlow(context).collect { s ->
+            selectedQuality = s.quality
+            msaaEnabled = s.msaa
+            aoEnabled = s.ao
+            bloomEnabled = s.bloom
+            searchLimit = s.searchLimit.toFloat()
         }
     }
+
+    val qualityOptions = listOf("LOW", "MEDIUM", "HIGH", "ULTRA")
+    val qualityDescriptions = mapOf(
+        "LOW" to "Best performance. Suitable for older devices.",
+        "MEDIUM" to "Balanced quality and performance.",
+        "HIGH" to "High fidelity. Requires a capable GPU.",
+        "ULTRA" to "Maximum quality. May impact battery life."
+    )
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Graphics Settings") },
+                title = { Text("Graphics Quality") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                ),
+                windowInsets = TopAppBarDefaults.windowInsets
             )
+        },
+        bottomBar = {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                Button(
+                    onClick = {
+                        scope.launch {
+                            GraphicsSettingsStore.saveSettings(
+                                context, selectedQuality, msaaEnabled, aoEnabled, bloomEnabled,
+                                searchLimit.roundToInt()
+                            )
+                        }
+                        navController.popBackStack()
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .widthIn(max = 480.dp)
+                        .padding(16.dp)
+                ) {
+                    Text("Apply Settings")
+                }
+            }
         }
     ) { padding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+                .padding(padding),
+            contentAlignment = Alignment.TopCenter
         ) {
-            // Section: Render Quality Options
-            Text("Render Quality", style = MaterialTheme.typography.titleMedium)
-
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .widthIn(max = 760.dp)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                qualities.forEach { quality ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.clickable {
-                            selectedQuality = quality
-                            scope.launch {
-                                GraphicsSettingsStore.saveSettings(
-                                    context,
-                                    selectedQuality,
-                                    msaaEnabled,
-                                    aoEnabled,
-                                    bloomEnabled,
-                                    searchResultLimit.toInt()
-                                )
-                            }
+
+            // ── Render Quality ───────────────────────────────────────────────
+            SettingsSectionHeader("Render Quality")
+
+            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                qualityOptions.forEachIndexed { index, quality ->
+                    SegmentedButton(
+                        selected = selectedQuality == quality,
+                        onClick = { selectedQuality = quality },
+                        shape = SegmentedButtonDefaults.itemShape(index, qualityOptions.size),
+                        label = {
+                            Text(
+                                quality.replaceFirstChar { it.uppercase() }.take(3),
+                                style = MaterialTheme.typography.labelMedium
+                            )
                         }
-                    ) {
-                        RadioButton(
-                            selected = selectedQuality == quality,
-                            onClick = {
-                                selectedQuality = quality
-                                scope.launch {
-                                    GraphicsSettingsStore.saveSettings(
-                                        context,
-                                        selectedQuality,
-                                        msaaEnabled,
-                                        aoEnabled,
-                                        bloomEnabled,
-                                        searchResultLimit.toInt()
-                                    )
-                                }
-                            }
-                        )
-                        Text(text = quality, modifier = Modifier.padding(start = 4.dp))
-                    }
+                    )
                 }
             }
 
-            HorizontalDivider(
-                modifier = Modifier
-                    .padding(vertical = 8.dp)
-                    .fillMaxWidth(),
-                thickness = 1.dp
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = qualityDescriptions[selectedQuality] ?: "",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(12.dp)
+                )
+            }
+
+            Spacer(Modifier.height(8.dp))
+            HorizontalDivider()
+
+            // ── Effects ─────────────────────────────────────────────────────
+            SettingsSectionHeader("Effects")
+
+            ListItem(
+                headlineContent = { Text("Multi-Sample Anti-Aliasing") },
+                supportingContent = { Text("Smooths jagged edges on model surfaces") },
+                trailingContent = {
+                    Switch(
+                        checked = msaaEnabled,
+                        onCheckedChange = { msaaEnabled = it }
+                    )
+                }
             )
 
-            // Section: Toggleable Graphics Effects
-            Text("Additional Effects", style = MaterialTheme.typography.titleMedium)
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
 
-            SettingSwitch("Multi-sample Anti-Aliasing (MSAA)", msaaEnabled) {
-                msaaEnabled = it
-                scope.launch {
-                    GraphicsSettingsStore.saveSettings(
-                        context, selectedQuality, msaaEnabled, aoEnabled, bloomEnabled, searchResultLimit.toInt()
+            ListItem(
+                headlineContent = { Text("Ambient Occlusion") },
+                supportingContent = { Text("Adds depth shading to crevices") },
+                trailingContent = {
+                    Switch(
+                        checked = aoEnabled,
+                        onCheckedChange = { aoEnabled = it }
                     )
                 }
-            }
+            )
 
-            SettingSwitch("Ambient Occlusion", aoEnabled) {
-                aoEnabled = it
-                scope.launch {
-                    GraphicsSettingsStore.saveSettings(
-                        context, selectedQuality, msaaEnabled, aoEnabled, bloomEnabled, searchResultLimit.toInt()
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+
+            ListItem(
+                headlineContent = { Text("Bloom") },
+                supportingContent = { Text("Adds a glow effect to bright areas") },
+                trailingContent = {
+                    Switch(
+                        checked = bloomEnabled,
+                        onCheckedChange = { bloomEnabled = it }
                     )
                 }
-            }
+            )
 
-            SettingSwitch("Bloom", bloomEnabled) {
-                bloomEnabled = it
-                scope.launch {
-                    GraphicsSettingsStore.saveSettings(
-                        context, selectedQuality, msaaEnabled, aoEnabled, bloomEnabled, searchResultLimit.toInt()
-                    )
-                }
-            }
+            Spacer(Modifier.height(8.dp))
+            HorizontalDivider()
 
-            // Additional input section: Dynamic Search Result Limit
-            Text("Search Result Limit", style = MaterialTheme.typography.titleMedium)
+            // ── Search Result Limit ──────────────────────────────────────────
+            SettingsSectionHeader("Search")
 
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                OutlinedTextField(
-                    value = searchResultLimit,
-                    onValueChange = { newValue ->
-                        if (newValue.all { it.isDigit() }) {
-                            searchResultLimit = newValue
-                            newValue.toIntOrNull()?.let { value ->
-                                if (value in 10..100) {
-                                    scope.launch {
-                                        GraphicsSettingsStore.saveSettings(
-                                            context,
-                                            selectedQuality,
-                                            msaaEnabled,
-                                            aoEnabled,
-                                            bloomEnabled,
-                                            value
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    label = { Text("Max Results (10 - 100)") },
-                    placeholder = { Text("Enter a value between 10 and 100") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
-                )
+            Text(
+                text = "Max results: ${searchLimit.roundToInt()}",
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
 
-                Text(
-                    text = "Controls how many top-matching subparts appear in search results. Lower values improve performance on older devices.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.outline
-                )
-            }
+            Slider(
+                value = searchLimit,
+                onValueChange = { searchLimit = it },
+                valueRange = 5f..100f,
+                steps = 18,
+                modifier = Modifier.padding(horizontal = 8.dp)
+            )
+
+            Text(
+                text = "Controls how many matching subparts appear in search results.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+
+            Spacer(Modifier.height(80.dp)) // space for bottomBar
         }
     }
 }
-
-/**
- * Reusable switch component for enabling/disabling a single graphics feature.
- *
- * @param label Label displayed alongside the switch
- * @param isChecked Current checked state
- * @param onToggle Callback to handle toggle change
- */
-@Composable
-fun SettingSwitch(label: String, isChecked: Boolean, onToggle: (Boolean) -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(text = label, modifier = Modifier.weight(1f))
-        Switch(checked = isChecked, onCheckedChange = onToggle)
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GraphicsSettingsScreenPreview() {
-    // Mock NavController for preview purposes
-    val mockNavController = rememberNavController()
-
-    // Wrap the screen in a theme to preview it with material styling
-    AnatomyInsightTheme(appTheme = AppTheme.LIGHT) {
-        GraphicsSettingsScreen(navController = mockNavController)
-    }
 }

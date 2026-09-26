@@ -15,95 +15,183 @@
  */
 package com.shaikhmohammadtalha.anatomyinsight.ui.components
 
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.ViewInAr
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.NavigationRailItemDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.compose.runtime.getValue
 
 /**
- * Bottom navigation bar used throughout the app.
- * Provides quick access to the Home, Search, and Settings screens.
+ * Bottom navigation bar with four tabs: Home, Search, History, Settings.
  *
- * @param navController Controller for navigating between composable destinations
- * @param onSearchClick Lambda invoked when the Search item is selected
+ * @param navController Navigation controller for routing between tabs
+ * @param activeTab Explicitly active tab override
  */
 @Composable
 fun BottomNavBar(
-    navController: NavController,
-    onSearchClick: () -> Unit
+    navController: NavHostController,
+    activeTab: String? = null
 ) {
-    // Get the current destination from the navigation stack
     val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentDestination = navBackStackEntry?.destination?.route
+    val currentDestination = activeTab ?: navBackStackEntry?.destination?.route
 
-    NavigationBar(
-        modifier = Modifier
-            .navigationBarsPadding()
-            .fillMaxWidth()
-            .height(64.dp),
-        containerColor = MaterialTheme.colorScheme.background,
-        tonalElevation = 8.dp
-    ) {
-        // Home navigation item
+    NavigationBar {
+        // ── Home ────────────────────────────────────────────────────────────
         NavigationBarItem(
             selected = currentDestination == "main",
             onClick = {
-                if (currentDestination != "main") {
-                    navController.navigate("main") {
-                        popUpTo(navController.graph.startDestinationId) {
-                            inclusive = false
-                        }
-                        launchSingleTop = true
-                        restoreState = false // Consider true only if state restoration is enabled
-                    }
-                }
+                navigateToTab(navController, "main", currentDestination)
             },
-            icon = {
-                Icon(Icons.Default.Home, contentDescription = "Home")
-            },
-            label = { Text("Home") }
+            icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
+            label = { Text("Home") },
+            colors = NavigationBarItemDefaults.colors(
+                indicatorColor = MaterialTheme.colorScheme.primaryContainer
+            )
         )
 
-        // Search navigation item
+        // ── Search ──────────────────────────────────────────────────────────
         NavigationBarItem(
             selected = currentDestination == "search",
             onClick = {
-                if (currentDestination != "search") {
-                    onSearchClick()
-                }
+                navigateToTab(navController, "search", currentDestination)
             },
-            icon = {
-                Icon(Icons.Default.Search, contentDescription = "Search")
-            },
-            label = { Text("Search") }
+            icon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+            label = { Text("Search") },
+            colors = NavigationBarItemDefaults.colors(
+                indicatorColor = MaterialTheme.colorScheme.primaryContainer
+            )
         )
 
-        // Settings navigation item
+        // ── History ─────────────────────────────────────────────────────────
+        NavigationBarItem(
+            selected = currentDestination == "history",
+            onClick = {
+                navigateToTab(navController, "history", currentDestination)
+            },
+            icon = { Icon(Icons.Default.History, contentDescription = "History") },
+            label = { Text("History") },
+            colors = NavigationBarItemDefaults.colors(
+                indicatorColor = MaterialTheme.colorScheme.primaryContainer
+            )
+        )
+
+        // ── Settings ────────────────────────────────────────────────────────
         NavigationBarItem(
             selected = currentDestination == "settings",
             onClick = {
-                if (currentDestination != "settings") {
-                    navController.navigate("settings")
-                }
+                navigateToTab(navController, "settings", currentDestination)
             },
-            icon = {
-                Icon(Icons.Default.Settings, contentDescription = "Settings")
-            },
-            label = { Text("Settings") }
+            icon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
+            label = { Text("Settings") },
+            colors = NavigationBarItemDefaults.colors(
+                indicatorColor = MaterialTheme.colorScheme.primaryContainer
+            )
         )
+    }
+}
+
+/**
+ * Tablet / Wide-screen Navigation Rail anchored to the left of the screen.
+ * Conforms to Material 3 large-screen guidelines for tablets, foldables, and landscape mode.
+ *
+ * @param navController Navigation controller for routing between tabs
+ * @param activeTab Explicitly active tab override
+ */
+@Composable
+fun AppNavigationRail(
+    navController: NavHostController,
+    activeTab: String? = null
+) {
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = activeTab ?: navBackStackEntry?.destination?.route
+
+    NavigationRail(
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        header = {
+            Icon(
+                Icons.Default.ViewInAr,
+                contentDescription = null,
+                modifier = Modifier
+                    .padding(vertical = 16.dp)
+                    .size(32.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+        }
+    ) {
+        NavigationRailItem(
+            selected = currentDestination == "main",
+            onClick = { navigateToTab(navController, "main", currentDestination) },
+            icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
+            label = { Text("Home") },
+            colors = NavigationRailItemDefaults.colors(
+                indicatorColor = MaterialTheme.colorScheme.primaryContainer
+            )
+        )
+
+        NavigationRailItem(
+            selected = currentDestination == "search",
+            onClick = { navigateToTab(navController, "search", currentDestination) },
+            icon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+            label = { Text("Search") },
+            colors = NavigationRailItemDefaults.colors(
+                indicatorColor = MaterialTheme.colorScheme.primaryContainer
+            )
+        )
+
+        NavigationRailItem(
+            selected = currentDestination == "history",
+            onClick = { navigateToTab(navController, "history", currentDestination) },
+            icon = { Icon(Icons.Default.History, contentDescription = "History") },
+            label = { Text("History") },
+            colors = NavigationRailItemDefaults.colors(
+                indicatorColor = MaterialTheme.colorScheme.primaryContainer
+            )
+        )
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        NavigationRailItem(
+            selected = currentDestination == "settings",
+            onClick = { navigateToTab(navController, "settings", currentDestination) },
+            icon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
+            label = { Text("Settings") },
+            colors = NavigationRailItemDefaults.colors(
+                indicatorColor = MaterialTheme.colorScheme.primaryContainer
+            )
+        )
+    }
+}
+
+private fun navigateToTab(
+    navController: NavHostController,
+    targetRoute: String,
+    currentRoute: String?
+) {
+    if (currentRoute == targetRoute) return
+    navController.navigate(targetRoute) {
+        popUpTo("main") {
+            saveState = true
+        }
+        launchSingleTop = true
+        restoreState = true
     }
 }

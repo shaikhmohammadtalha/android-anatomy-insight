@@ -1,4 +1,4 @@
-# 🏥 Anatomy Insight  
+# Anatomy Insight
 
 [![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-%230A8FDC.svg?style=flat&logo=android&logoColor=white)](https://developer.android.com/jetpack/compose)
 [![Kotlin](https://img.shields.io/badge/Kotlin-%230095D5.svg?style=flat&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
@@ -6,121 +6,171 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 [![3D Models](https://img.shields.io/badge/3D%20Models-Z%20Anatomy-orange)](https://www.z-anatomy.com/)
 
-🚀 **Anatomy Insight** is an Android app that lets users **explore 3D models of human anatomy** with real-time rendering using **Google Filament**.  
+Anatomy Insight is an Android application for interactive 3D exploration of human anatomy, powered by Google Filament for real-time rendering and built entirely with Jetpack Compose.
 
 ---
 
 <p align="center">
-
-<img src="https://github.com/shaikhmohammadtalha/android-anatomy-insight/blob/main/metadata/images/phoneScreenshots/01.png" width="250">
-
-<img src="https://github.com/shaikhmohammadtalha/android-anatomy-insight/blob/main/metadata/images/phoneScreenshots/02.png" width="250">
-
-<img src="https://github.com/shaikhmohammadtalha/android-anatomy-insight/blob/main/metadata/images/phoneScreenshots/03.png" width="250">
-  
+  <img src="https://github.com/shaikhmohammadtalha/android-anatomy-insight/blob/main/metadata/images/phoneScreenshots/01.png" width="230">
+  <img src="https://github.com/shaikhmohammadtalha/android-anatomy-insight/blob/main/metadata/images/phoneScreenshots/02.png" width="230">
+  <img src="https://github.com/shaikhmohammadtalha/android-anatomy-insight/blob/main/metadata/images/phoneScreenshots/03.png" width="230">
 </p>
 
 <p align="center">
-
-<img src="https://github.com/shaikhmohammadtalha/android-anatomy-insight/blob/main/metadata/images/phoneScreenshots/04.png" width="250">
-
-<img src="https://github.com/shaikhmohammadtalha/android-anatomy-insight/blob/main/metadata/images/phoneScreenshots/05.png" width="250">
-  
+  <img src="https://github.com/shaikhmohammadtalha/android-anatomy-insight/blob/main/metadata/images/phoneScreenshots/04.png" width="230">
+  <img src="https://github.com/shaikhmohammadtalha/android-anatomy-insight/blob/main/metadata/images/phoneScreenshots/05.png" width="230">
+  <img src="https://github.com/shaikhmohammadtalha/android-anatomy-insight/blob/main/metadata/images/phoneScreenshots/06.png" width="230">
 </p>
 
 ---
 
-## 📖 About  
+## About
 
-**Anatomy Insight** is a modern Android application built with **Jetpack Compose** for **interactive 3D anatomical exploration**.  
-It features **6 primary anatomical models** with over **2,300 detailed subparts**, each rendered in real-time using **Google Filament**.  
-Powered by a **Room (SQLite) database**, the app efficiently stores and retrieves anatomical data, ensuring a smooth and responsive user experience.  
-Designed for performance and clarity, Anatomy Insight offers an immersive way to explore human anatomy right from your device.
+Anatomy Insight offers detailed real-time 3D anatomical visualization across 6 major systems with 2,370 individual subpart models. Built on Google Filament, every structure can be rotated, scaled, and inspected in high detail.
 
----
-
-## 🎨 **Features**
-✅ **3D Model Viewing** – Explore high-quality human anatomy models  
-✅ **Jetpack Compose UI** – Built with modern UI components  
-✅ **Kotlin-Powered** – Uses Kotlin for efficient development  
-✅ **Filament 3D Engine** – High-performance rendering for real-time visualization  
-✅ **Educational Descriptions** – Includes details for each anatomical part  
-✅ **Optimized Performance** – Smooth rendering of 3D objects  
+Anatomical metadata — including common names, Latin scientific names, and descriptions — is backed by an on-device Room SQLite database. The app includes study notes per subpart, date-grouped viewing history, global search, configurable rendering settings, and full backup and restore support.
 
 ---
 
-## 🛠️ **Technologies Used**
-- **Jetpack Compose** – Modern UI toolkit for Android  
-- **Kotlin** – Official language for Android development  
-- **Google Filament** – High-performance real-time 3D rendering engine  
-- **Z-Anatomy Models** – Open-source anatomical 3D models  
+## Features
+
+- **Interactive 3D Viewport** – Real-time rendering with Google Filament. Supports gesture rotation, scaling, and a toggleable fullscreen canvas mode.
+- **Fullscreen Viewing Modes** – One-tap fullscreen toggles for the 3D model viewport, subpart browsing panels, and the description and study notes editor.
+- **6 Anatomical Systems** – Angiology, Arthrology, Muscular Insertions, Myology, Neurology, and Splanchnology.
+- **2,370 Subpart Models** – High-resolution individual `.glb` meshes for every anatomical structure.
+- **Descriptions & Study Notes** – Formatted scientific descriptions alongside persistent, auto-saving personal notes (with live save indicators and undoable deletion).
+- **Viewing History** – Chronological "Recently Viewed" screen grouped by date with quick navigation back to any viewed subpart.
+- **Dedicated Global Search** – Search across all 2,370 subparts by common or Latin scientific name with configurable result limits.
+- **Database Backup & Restore** – SAF-based database export and restore with schema validation, identity hash patching, and clean process restart. Corrupted or missing local databases are automatically recovered from bundled assets on launch.
+- **Graphics & Rendering Controls** – Selectable quality presets (Low, Medium, High, Ultra) with individual toggles for MSAA, Ambient Occlusion, and Bloom.
+- **Theme Options** – System Auto, Light, Dark, and dynamic Material You palette support.
+- **Responsive Layout** – Adapts cleanly between phones (vertical split + bottom navigation) and tablets/foldables/landscape (side-by-side split + navigation rail).
 
 ---
 
-## 📋 Requirements  
-🔹 **Minimum SDK:** Android 8.0 (API 27)  
-🔹 **Target SDK:** Android 16 (API 36) 
-🔹 **Architecture:** Universal  
-🔹 **Storage:** ~300MB free space recommended  
+## Anatomical Systems & Subpart Counts
+
+| System | Description | Subparts |
+|---|---|---|
+| Angiology | Blood vessels and lymphatics | 539 |
+| Arthrology | Joints and ligaments | 507 |
+| Muscular Insertions | Skeletal muscle attachments | 626 |
+| Myology | Muscular system | 395 |
+| Neurology | Central and peripheral nervous system | 253 |
+| Splanchnology | Visceral organs | 49 |
+| **Total** | | **2,370** |
 
 ---
 
-## 🏗️ **Installation & Usage**
-1. **Clone the Repository**  
+## Architecture & Tech Stack
+
+| Layer | Technology |
+|---|---|
+| **Language** | Kotlin 2.4 |
+| **UI Framework** | Jetpack Compose + Material 3 |
+| **3D Rendering** | Google Filament 1.77 (`filament-android`, `filament-utils-android`, `gltfio-android`) |
+| **Navigation** | Jetpack Navigation Compose |
+| **Database** | Room 2.8 (SQLite, pre-packaged asset, v8 schema) |
+| **Settings** | Jetpack DataStore Preferences |
+| **Image Loading** | Coil 2.7 |
+| **Architecture** | AndroidX ViewModel + Kotlin Coroutines & Flow |
+| **Build System** | Gradle 9.4 with Kotlin DSL + KSP |
+
+### Package Structure
+
+```
+com.shaikhmohammadtalha.anatomyinsight
+├── data/               # Room entities (Model, Subpart, Note, History), DAOs, Database, BackupManager
+├── datastore/          # GraphicsSettingsStore, ThemeStore
+├── rendering/          # ModelRenderer (Filament lifecycle & render loop), HDRUtils
+├── ui/
+│   ├── components/     # BottomNavBar, AppNavigationRail, DescriptionCard, ModelRows, SubpartRows
+│   ├── model/          # AnatomyModel UI model
+│   ├── screens/        # SearchScreen, SettingsScreen, HistoryScreen, GraphicsSettingsScreen,
+│   │                   # ThemeSettingsScreen, PrivacyPolicyScreen, CreditsScreen
+│   ├── theme/          # Color, Theme, Typography
+│   └── utils/          # DoubleBackToExitHandler
+├── viewmodel/          # ModelViewModel
+└── MainActivity.kt     # NavHost setup, MainActivityContent layout & fullscreen coordination
+```
+
+### Navigation Routes
+
+| Route | Screen |
+|---|---|
+| `main` | Home – 3D viewport with model and subpart selector |
+| `search` | Dedicated full-screen search across all systems |
+| `history` | Recently Viewed subparts grouped by date |
+| `settings` | Settings hub (Graphics, Theme, Backup & Restore, About) |
+| `graphics_settings` | Render quality, MSAA, AO, Bloom, and search limits |
+| `theme_settings` | Theme selector (Auto, Light, Dark, Dynamic) |
+| `privacy_policy` | Privacy Policy |
+| `credits` | Model, texture, and text attributions |
+
+---
+
+## Requirements
+
+- Version: 2.0 (Build 2)
+- Minimum SDK: Android 8.1 (API 27)
+- Compile / Target SDK: API 37
+- Storage: ~300 MB free space (includes 2,370 bundled 3D models)
+- Universal APK build supported
+
+---
+
+## Installation & Setup
+
+1. **Clone the repository:**
    ```sh
    git clone https://github.com/shaikhmohammadtalha/android-anatomy-insight.git
    cd android-anatomy-insight
    ```
-2. **Open in Android Studio**  
-   - Ensure you have the latest **Android Studio** installed.
-   - Open the project and let Gradle sync.
-3. **Run the App**  
-   - Connect an emulator or Android device.
-   - Click **Run ▶** in Android Studio.
+2. **Open in Android Studio:**
+   - Open the project folder in Android Studio Ladybug or newer.
+   - Let Gradle sync project dependencies.
+3. **Run:**
+   - Connect an Android device or start an emulator running API 27+.
+   - Press **Run** (Shift + F10).
 
 ---
 
-## 🔗 **Attributions**
-### 📄 **lightroom_14b.hdr**
-This project includes the file **lightroom_14b.hdr**, which is provided by Google under the **Apache License 2.0**.  
-- **Source:** [Google Model Viewer](https://github.com/google/model-viewer)  
-- **License:** [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0)  
+## Attributions
 
-### 🎭 **3D Models**
-This project includes **modified and original 3D models** from **Z-Anatomy**, licensed under **Creative Commons Attribution-ShareAlike 4.0 (CC BY-SA 4.0)**.  
-- **Source:** [Z-Anatomy](https://www.z-anatomy.com/)  
-- **License:** [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/deed.en)  
-- **Original Models:** Adapted from **BodyParts3D**  
-- **Modifications:** Some models have been resized, colored, repaired, or combined.  
+### lightroom_14b.hdr
+Environment map provided by Google under Apache License 2.0.
+- Source: [Google Model Viewer](https://github.com/google/model-viewer)
+- License: [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0)
 
-### 📚 **Anatomical Descriptions**
-The educational descriptions for anatomical structures in this app are sourced from **open-access and public domain medical literature**.
-- **[OpenStax - Anatomy and Physiology](https://openstax.org/details/books/anatomy-and-physiology)** (Licensed under **CC BY 4.0**)
-- **[Gray’s Anatomy (1918 Edition)](https://www.bartleby.com/107/)** (Public Domain)
-- **[MedlinePlus (U.S. National Library of Medicine)](https://medlineplus.gov/)** (Government-funded, public domain content)
+### 3D Models
+Modified and original models from Z-Anatomy under CC BY-SA 4.0.
+- Source: [Z-Anatomy](https://www.z-anatomy.com/)
+- Origin: Adapted from BodyParts3D
+- License: [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
 
-When quoting or adapting descriptions from these sources, proper attribution is provided within the app.
-
-© 2025 [**Shaikh Mohammad Talha**](https://github.com/shaikhmohammadtalha). This project follows the terms of the **CC BY-SA 4.0** license where applicable.
+### Anatomical Descriptions
+Sourced from open-access and public domain medical literature:
+- [OpenStax Anatomy and Physiology](https://openstax.org/details/books/anatomy-and-physiology) (CC BY 4.0)
+- [Gray's Anatomy (1918 Edition)](https://www.bartleby.com/107/) (Public Domain)
+- [MedlinePlus](https://medlineplus.gov/) (U.S. National Library of Medicine, Public Domain)
 
 ---
 
-## 📜 **License**
-This project is licensed under the **Apache License 2.0**. See the [LICENSE](LICENSE) file for details.
+## License
+
+Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for details.
 
 ---
 
-## ❤️ **Support & Contributions**
-- ⭐ **Star this repository** if you find it useful!  
-- 🛠️ **Contributions are welcome!** Feel free to submit a pull request.  
-- 🐞 Found a bug? **Open an issue** [here](https://github.com/shaikhmohammadtalha/android-anatomy-insight/issues).  
+## Contributing & Support
+
+- Contributions and improvements are welcome. Please open an issue or submit a pull request.
+- If you find this project helpful, consider starring the repository.
+- Bug reports and feature suggestions can be submitted via [GitHub Issues](https://github.com/shaikhmohammadtalha/android-anatomy-insight/issues).
 
 ---
 
-## 📬 **Contact**
-📧 **Email:** shaikhmot@gmail.com  
-🌐 **GitHub:** [**Shaikh Mohammad Talha**](https://github.com/shaikhmohammadtalha)
+## Contact
 
----
-
-### 🎉 Happy exploring – and feel free to contribute or reach out! 🚀
+- Email: shaikhmot@gmail.com
+- GitHub: [Shaikh Mohammad Talha](https://github.com/shaikhmohammadtalha)

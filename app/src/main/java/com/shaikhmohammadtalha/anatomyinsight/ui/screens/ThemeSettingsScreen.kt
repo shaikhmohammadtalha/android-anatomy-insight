@@ -16,24 +16,38 @@
 package com.shaikhmohammadtalha.anatomyinsight.ui.screens
 
 import android.os.Build
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AutoMode
+import androidx.compose.material.icons.filled.BrightnessMedium
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -48,8 +62,8 @@ import com.shaikhmohammadtalha.anatomyinsight.datastore.ThemeStore
 import kotlinx.coroutines.launch
 
 /**
- * Composable screen for selecting the application theme.
- * Supports Light, Dark, Auto (follow system), and Dynamic (Material You, API 31+).
+ * Appearance/theme settings screen using a segmented button row for theme selection.
+ * Shows an explanation card for the currently selected theme.
  *
  * @param navController Used for back navigation
  */
@@ -59,83 +73,109 @@ fun ThemeSettingsScreen(navController: NavController) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    // Available theme options for selection
     val themes = listOf(AppTheme.AUTO, AppTheme.LIGHT, AppTheme.DARK, AppTheme.DYNAMIC)
-
-    // Currently active theme from the datastore
     val currentTheme by ThemeStore.themeFlow(context).collectAsState(initial = AppTheme.AUTO)
+
+    // Resolve what AUTO would actually use on this device
+    val resolvedTheme = when {
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> AppTheme.DYNAMIC
+        isSystemInDarkTheme() -> AppTheme.DARK
+        else -> AppTheme.LIGHT
+    }
+
+    val themeIcon = @Composable { theme: AppTheme ->
+        when (theme) {
+            AppTheme.AUTO -> Icon(Icons.Default.AutoMode, contentDescription = null, modifier = Modifier.size(18.dp))
+            AppTheme.LIGHT -> Icon(Icons.Default.LightMode, contentDescription = null, modifier = Modifier.size(18.dp))
+            AppTheme.DARK -> Icon(Icons.Default.DarkMode, contentDescription = null, modifier = Modifier.size(18.dp))
+            AppTheme.DYNAMIC -> Icon(Icons.Default.BrightnessMedium, contentDescription = null, modifier = Modifier.size(18.dp))
+        }
+    }
+
+    val themeLabel: (AppTheme) -> String = { theme ->
+        when (theme) {
+            AppTheme.AUTO -> "Auto"
+            AppTheme.LIGHT -> "Light"
+            AppTheme.DARK -> "Dark"
+            AppTheme.DYNAMIC -> "Dynamic"
+        }
+    }
+
+    val themeDescription: (AppTheme) -> String = { theme ->
+        when (theme) {
+            AppTheme.AUTO -> "Follows your device's dark/light system setting. Currently resolves to: ${resolvedTheme.name.lowercase().replaceFirstChar { it.uppercase() }}."
+            AppTheme.LIGHT -> "Forces light mode regardless of system setting."
+            AppTheme.DARK -> "Forces dark mode regardless of system setting."
+            AppTheme.DYNAMIC -> "Uses Material You dynamic colors from your wallpaper. Requires Android 12 (API 31) or higher."
+        }
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Theme Settings") },
+                title = { Text("Appearance") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                ),
+                windowInsets = TopAppBarDefaults.windowInsets
             )
         }
     ) { padding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(padding),
+            contentAlignment = Alignment.TopCenter
         ) {
-            Text("Select App Theme", style = MaterialTheme.typography.titleMedium)
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .widthIn(max = 760.dp)
+                    .padding(horizontal = 16.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text("Theme", style = MaterialTheme.typography.titleMedium)
 
-            // Resolve which theme would be used under AUTO mode
-            val resolvedTheme = when {
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> AppTheme.DYNAMIC
-                isSystemInDarkTheme() -> AppTheme.DARK
-                else -> AppTheme.LIGHT
-            }
-
-            // Display radio buttons for each theme option
-            themes.forEach { themeOption ->
-                val selected = currentTheme == themeOption
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            scope.launch {
-                                ThemeStore.saveTheme(context, themeOption)
-                            }
-                        }
-                        .padding(vertical = 4.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp)
-                    ) {
-                        RadioButton(
-                            selected = selected,
-                            onClick = {
-                                scope.launch {
-                                    ThemeStore.saveTheme(context, themeOption)
-                                }
-                            }
-                        )
-                        Text(
-                            text = themeOption.name.lowercase().replaceFirstChar { it.uppercase() },
-                            modifier = Modifier.padding(start = 8.dp)
+                // Segmented button row for all 4 theme options
+                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                    themes.forEachIndexed { index, theme ->
+                        SegmentedButton(
+                            selected = currentTheme == theme,
+                            onClick = { scope.launch { ThemeStore.saveTheme(context, theme) } },
+                            shape = SegmentedButtonDefaults.itemShape(index, themes.size),
+                            icon = { themeIcon(theme) },
+                            label = { Text(themeLabel(theme), style = MaterialTheme.typography.labelSmall) }
                         )
                     }
+                }
 
-                    // Additional context for AUTO mode
-                    if (themeOption == AppTheme.AUTO && selected) {
+                // Description card for the currently selected theme
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Icon(
+                            Icons.Default.Info,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
                         Text(
-                            text = "→ Currently using: ${
-                                resolvedTheme.name.lowercase().replaceFirstChar { it.uppercase() }
-                            } theme",
+                            text = themeDescription(currentTheme),
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.outline,
-                            modifier = Modifier.padding(start = 48.dp) // indent under radio
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
