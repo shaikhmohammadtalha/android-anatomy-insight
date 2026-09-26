@@ -55,7 +55,7 @@ abstract class AnatomyDatabase : RoomDatabase() {
                     AnatomyDatabase::class.java,
                     "anatomy_database_fixed.db"
                 )
-                    .fallbackToDestructiveMigration() // Resets DB if schema changes (non-migrated)
+                    .fallbackToDestructiveMigration(dropAllTables = true) // Resets DB if schema changes (non-migrated)
                     .createFromAsset("anatomy_database_fixed.db") // Uses a pre-built database from assets
                     .build()
 

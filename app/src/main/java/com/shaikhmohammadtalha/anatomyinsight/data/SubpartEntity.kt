@@ -18,6 +18,7 @@ package com.shaikhmohammadtalha.anatomyinsight.data
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
 /**
@@ -33,7 +34,8 @@ import androidx.room.PrimaryKey
         parentColumns = ["id"],
         childColumns = ["model_id"],
         onDelete = ForeignKey.CASCADE // Ensures subparts are deleted if their parent model is deleted
-    )]
+    )],
+    indices = [Index(value = ["model_id"])]
 )
 data class SubpartEntity(
     @PrimaryKey(autoGenerate = true)
